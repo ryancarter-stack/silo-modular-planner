@@ -355,9 +355,6 @@ function App() {
                       onClick={() => openModal(fn, 'function')}
                     >
                       <div className="function-name">
-                        {viewMode !== 'all' && (
-                          <span className="silo-status-icon">{fn.siloStatus ? '✓' : '✗'}</span>
-                        )}
                         {fn.name}
                         {itemHasComments && <span className="comment-dot">💬</span>}
                       </div>
