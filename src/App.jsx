@@ -20,8 +20,9 @@ function App() {
   const [activeCustomers, setActiveCustomers] = useState(new Set(['distributor']))
   const [selectedItem, setSelectedItem] = useState(null)
   const [modalType, setModalType] = useState(null)
+  const [showCustomerPanel, setShowCustomerPanel] = useState(false) // Mobile toggle
   
-  // Comments: { 'function:receiving': [{ name: 'Todd', text: 'comment', timestamp: 123, issueNumber: 1 }] }
+  // Comments
   const [comments, setComments] = useState({})
   const [isLoadingComments, setIsLoadingComments] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -79,7 +80,7 @@ function App() {
   const openModal = (item, type) => {
     setSelectedItem(item)
     setModalType(type)
-    setNewCommentText('') // Clear comment input when opening new modal
+    setNewCommentText('')
   }
 
   const closeModal = () => {
@@ -118,7 +119,6 @@ function App() {
     setIsSubmitting(true)
     
     try {
-      // Get existing issue number if there's already a comment thread
       const existingComments = comments[key] || []
       const issueNumber = existingComments[0]?.issueNumber
       
@@ -129,10 +129,8 @@ function App() {
         issueNumber
       })
       
-      // Refresh comments from server to get accurate data (issue numbers, etc)
       setTimeout(loadComments, 1500)
     } catch (error) {
-      // Roll back optimistic update on error
       setComments(prev => ({
         ...prev,
         [key]: (prev[key] || []).filter(c => c.timestamp !== newComment.timestamp)
@@ -149,97 +147,10 @@ function App() {
     return key ? (comments[key] || []) : []
   }
 
-  // Count total comments
-  const getCommentCount = () => {
-    return Object.values(comments).reduce((sum, arr) => sum + arr.length, 0)
-  }
-
   // Check if item has comments
   const hasComments = (type, id) => {
     const key = `${type}:${id}`
     return comments[key] && comments[key].length > 0
-  }
-
-  // Export comments as downloadable file
-  const exportComments = () => {
-    const timestamp = new Date().toISOString().split('T')[0]
-    const commentEntries = Object.entries(comments).filter(([_, arr]) => arr && arr.length > 0)
-    
-    if (commentEntries.length === 0) {
-      alert('No comments to export yet!')
-      return
-    }
-
-    // Organize comments by type
-    const organized = {
-      base: [],
-      customer: [],
-      function: [],
-      liteType: []
-    }
-
-    commentEntries.forEach(([key, commentArray]) => {
-      const [type, id] = key.split(':')
-      let name = id
-      
-      // Look up friendly names
-      if (type === 'customer') {
-        const ct = customerTypes.find(c => c.id === id)
-        name = ct?.name || id
-      } else if (type === 'function') {
-        // Search all customer types for this function
-        for (const ct of customerTypes) {
-          const fn = ct.functions.find(f => f.id === id)
-          if (fn) {
-            name = fn.name
-            break
-          }
-        }
-        // Also check siloBase
-        const baseFn = siloBase.functions.find(f => f.id === id)
-        if (baseFn) name = baseFn.name
-      } else if (type === 'liteType') {
-        const lt = liteTypes.find(l => l.id === id)
-        name = lt?.name || id
-      }
-
-      organized[type]?.push({ id, name, comments: commentArray })
-    })
-
-    // Generate formatted output
-    let output = `SILO MODULAR ARCHITECTURE FEEDBACK\n`
-    output += `Generated: ${timestamp}\n`
-    output += `Total Comments: ${getCommentCount()}\n`
-    output += `${'='.repeat(50)}\n\n`
-
-    const formatSection = (title, items) => {
-      if (items.length === 0) return ''
-      let section = `${title}\n${'-'.repeat(30)}\n`
-      items.forEach(({ name, comments: cmts }) => {
-        section += `\n${name}:\n`
-        cmts.forEach(c => {
-          section += `  [${c.name} - ${new Date(c.timestamp).toLocaleString()}]\n`
-          section += `  ${c.text}\n\n`
-        })
-      })
-      return section
-    }
-
-    output += formatSection('SILO BASE', organized.base)
-    output += formatSection('CUSTOMER SEGMENTS', organized.customer)
-    output += formatSection('FUNCTIONS', organized.function)
-    output += formatSection('LITE PORTAL TYPES', organized.liteType)
-
-    // Create and download file
-    const blob = new Blob([output], { type: 'text/plain' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `silo-architecture-feedback-${timestamp}.txt`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
   }
 
   // Get lite type info for selected customers
@@ -263,7 +174,7 @@ function App() {
     return ids
   }
 
-  // Always get Core functions (for consistent layout)
+  // Get Core functions
   const getCoreFunctions = () => {
     const functions = new Map()
     customerTypes
@@ -307,17 +218,10 @@ function App() {
       <header className="header">
         <div className="header-content">
           <div>
-            <h1>Silo Modular Architecture Planner</h1>
+            <h1>Silo Modular Architecture</h1>
             <p className="subtitle">Toggle customer types to see required functions</p>
           </div>
-          <div className="header-actions">
-            {isLoadingComments && <span className="loading-indicator">Loading comments...</span>}
-            {getCommentCount() > 0 && (
-              <button className="export-btn" onClick={exportComments}>
-                📥 Export Feedback ({getCommentCount()})
-              </button>
-            )}
-          </div>
+          {isLoadingComments && <span className="loading-indicator">Loading...</span>}
         </div>
       </header>
 
@@ -329,7 +233,6 @@ function App() {
         >
           <h2>🏗️ Silo Base</h2>
           <span className="badge">{siloBase.functions.length} functions</span>
-          <span className="base-note">Foundation for all users</span>
         </div>
         <div className="base-functions">
           {siloBase.functions.map(fn => (
@@ -359,21 +262,29 @@ function App() {
             onClick={() => setViewMode('core')}
           >
             <span className="toggle-icon">🏢</span>
-            Silo Customer
+            <span className="toggle-text">Silo Customer</span>
           </button>
           <button 
             className={`toggle-btn ${viewMode === 'lite' ? 'active' : ''}`}
             onClick={() => setViewMode('lite')}
           >
             <span className="toggle-icon">🌐</span>
-            Silo Lite
+            <span className="toggle-text">Silo Lite</span>
           </button>
         </div>
+        
+        {/* Mobile toggle for customer panel */}
+        <button 
+          className="mobile-menu-btn"
+          onClick={() => setShowCustomerPanel(!showCustomerPanel)}
+        >
+          {showCustomerPanel ? '✕ Close' : '☰ Segments'} ({activeCustomers.size})
+        </button>
       </section>
 
       <div className="main-content">
         {/* Customer Type Toggles - Left Side */}
-        <aside className="customer-panel">
+        <aside className={`customer-panel ${showCustomerPanel ? 'show' : ''}`}>
           <h2>Customer Types</h2>
           {categories.map(cat => (
             <div key={cat.id} className="category-group">
@@ -406,7 +317,12 @@ function App() {
           ))}
         </aside>
 
-        {/* Active Functions - Center */}
+        {/* Overlay for mobile */}
+        {showCustomerPanel && (
+          <div className="mobile-overlay" onClick={() => setShowCustomerPanel(false)} />
+        )}
+
+        {/* Active Functions - Center/Main */}
         <main className="functions-panel">
           <h2>
             {viewMode === 'all' && 'All Functions'}
@@ -425,7 +341,6 @@ function App() {
                   const availableInLite = isAvailableInLite(fn.id)
                   const itemHasComments = hasComments('function', fn.id)
                   
-                  // Determine if greyed out based on view mode
                   let isGreyedOut = false
                   if (viewMode === 'core' && !fn.siloStatus) {
                     isGreyedOut = true
@@ -458,56 +373,6 @@ function App() {
             </div>
           )}
         </main>
-
-        {/* Stats Panel - Right Side */}
-        <aside className="stats-panel">
-          <h2>Summary</h2>
-          <div className="stat">
-            <div className="stat-value">{activeCustomers.size}</div>
-            <div className="stat-label">Active Customer Types</div>
-          </div>
-          <div className="stat">
-            <div className="stat-value">{coreFunctions.size}</div>
-            <div className="stat-label">Core Functions</div>
-          </div>
-          <div className="stat">
-            <div className="stat-value">{siloBase.functions.length}</div>
-            <div className="stat-label">Base Functions</div>
-          </div>
-          <div className="stat">
-            <div className="stat-value">{coreFunctions.size + siloBase.functions.length}</div>
-            <div className="stat-label">Total Functions</div>
-          </div>
-
-          {coreFunctions.size > 0 && (
-            <>
-              <h3>Most Common Functions</h3>
-              <div className="common-functions">
-                {Array.from(coreFunctions.values())
-                  .sort((a, b) => (b.customers?.length || 0) - (a.customers?.length || 0))
-                  .slice(0, 5)
-                  .map(fn => (
-                    <div key={fn.id} className="common-function">
-                      <span>{fn.name}</span>
-                      <span className="count">{fn.customers?.length || 0}</span>
-                    </div>
-                  ))}
-              </div>
-            </>
-          )}
-
-          {getCommentCount() > 0 && (
-            <>
-              <h3>Feedback</h3>
-              <div className="feedback-summary">
-                <div className="feedback-count">{getCommentCount()} comments</div>
-                <button className="export-btn-small" onClick={exportComments}>
-                  Export
-                </button>
-              </div>
-            </>
-          )}
-        </aside>
       </div>
 
       {/* Modal */}
@@ -571,11 +436,10 @@ function App() {
               </>
             )}
 
-            {/* Comment Section - shown on all modals */}
+            {/* Comment Section */}
             <div className="comment-section">
               <h3>💬 Feedback</h3>
               
-              {/* Existing comments */}
               {getCurrentComments().length > 0 && (
                 <div className="comments-list">
                   {getCurrentComments().map((comment, idx) => (
@@ -590,7 +454,6 @@ function App() {
                 </div>
               )}
               
-              {/* Add new comment */}
               <div className="add-comment">
                 <input
                   type="text"
