@@ -1,13 +1,68 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { siloBase, categories, customerTypes, liteTypes, liteFunctions } from './data'
+import { fetchComments, addComment as apiAddComment } from './github'
 import './App.css'
+
+// Helper function to format relative time
+function formatTimeAgo(timestamp) {
+  const seconds = Math.floor((Date.now() - timestamp) / 1000)
+  
+  if (seconds < 60) return 'just now'
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`
+  if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`
+  
+  return new Date(timestamp).toLocaleDateString()
+}
 
 function App() {
   const [viewMode, setViewMode] = useState('all') // 'all', 'core', or 'lite'
   const [activeCustomers, setActiveCustomers] = useState(new Set(['distributor']))
   const [selectedItem, setSelectedItem] = useState(null)
   const [modalType, setModalType] = useState(null)
-  const [comments, setComments] = useState({}) // { 'function:receiving': 'my comment', 'customer:grower': 'another comment' }
+  
+  // Comments: { 'function:receiving': [{ name: 'Todd', text: 'comment', timestamp: 123, issueNumber: 1 }] }
+  const [comments, setComments] = useState({})
+  const [isLoadingComments, setIsLoadingComments] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  
+  // Commenter name (persisted to localStorage)
+  const [commenterName, setCommenterName] = useState('')
+  
+  // Current comment being typed
+  const [newCommentText, setNewCommentText] = useState('')
+
+  // Load comments from GitHub on mount
+  useEffect(() => {
+    loadComments()
+  }, [])
+
+  const loadComments = async () => {
+    setIsLoadingComments(true)
+    try {
+      const data = await fetchComments()
+      setComments(data)
+    } catch (error) {
+      console.error('Failed to load comments:', error)
+    } finally {
+      setIsLoadingComments(false)
+    }
+  }
+
+  // Load commenter name from localStorage on mount
+  useEffect(() => {
+    const savedName = localStorage.getItem('silo-planner-name')
+    if (savedName) {
+      setCommenterName(savedName)
+    }
+  }, [])
+
+  // Save commenter name to localStorage when it changes
+  useEffect(() => {
+    if (commenterName) {
+      localStorage.setItem('silo-planner-name', commenterName)
+    }
+  }, [commenterName])
 
   const toggleCustomer = (customerId) => {
     setActiveCustomers(prev => {
@@ -24,11 +79,13 @@ function App() {
   const openModal = (item, type) => {
     setSelectedItem(item)
     setModalType(type)
+    setNewCommentText('') // Clear comment input when opening new modal
   }
 
   const closeModal = () => {
     setSelectedItem(null)
     setModalType(null)
+    setNewCommentText('')
   }
 
   // Generate comment key for current item
@@ -37,32 +94,69 @@ function App() {
     return `${modalType}:${selectedItem.id || selectedItem.name}`
   }
 
-  // Update comment for current item
-  const updateComment = (value) => {
+  // Add a new comment
+  const addComment = async () => {
     const key = getCommentKey()
-    if (key) {
+    if (!key || !newCommentText.trim() || !commenterName.trim()) return
+    
+    setIsSubmitting(true)
+    
+    try {
+      // Get existing issue number if there's already a comment thread
+      const existingComments = comments[key] || []
+      const issueNumber = existingComments[0]?.issueNumber
+      
+      await apiAddComment({
+        key,
+        name: commenterName.trim(),
+        text: newCommentText.trim(),
+        issueNumber
+      })
+      
+      // Optimistically update local state
+      const newComment = {
+        name: commenterName.trim(),
+        text: newCommentText.trim(),
+        timestamp: Date.now()
+      }
+      
       setComments(prev => ({
         ...prev,
-        [key]: value
+        [key]: [...(prev[key] || []), newComment]
       }))
+      
+      setNewCommentText('')
+      
+      // Refresh comments from server to get accurate data
+      setTimeout(loadComments, 1000)
+    } catch (error) {
+      alert('Failed to add comment: ' + error.message)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
-  // Get current comment
-  const getCurrentComment = () => {
+  // Get comments for current item
+  const getCurrentComments = () => {
     const key = getCommentKey()
-    return key ? (comments[key] || '') : ''
+    return key ? (comments[key] || []) : []
   }
 
   // Count total comments
   const getCommentCount = () => {
-    return Object.values(comments).filter(c => c && c.trim()).length
+    return Object.values(comments).reduce((sum, arr) => sum + arr.length, 0)
+  }
+
+  // Check if item has comments
+  const hasComments = (type, id) => {
+    const key = `${type}:${id}`
+    return comments[key] && comments[key].length > 0
   }
 
   // Export comments as downloadable file
   const exportComments = () => {
     const timestamp = new Date().toISOString().split('T')[0]
-    const commentEntries = Object.entries(comments).filter(([_, v]) => v && v.trim())
+    const commentEntries = Object.entries(comments).filter(([_, arr]) => arr && arr.length > 0)
     
     if (commentEntries.length === 0) {
       alert('No comments to export yet!')
@@ -77,7 +171,7 @@ function App() {
       liteType: []
     }
 
-    commentEntries.forEach(([key, comment]) => {
+    commentEntries.forEach(([key, commentArray]) => {
       const [type, id] = key.split(':')
       let name = id
       
@@ -102,45 +196,32 @@ function App() {
         name = lt?.name || id
       }
 
-      organized[type]?.push({ id, name, comment })
+      organized[type]?.push({ id, name, comments: commentArray })
     })
 
     // Generate formatted output
     let output = `SILO MODULAR ARCHITECTURE FEEDBACK\n`
     output += `Generated: ${timestamp}\n`
-    output += `Total Comments: ${commentEntries.length}\n`
+    output += `Total Comments: ${getCommentCount()}\n`
     output += `${'='.repeat(50)}\n\n`
 
-    if (organized.base.length > 0) {
-      output += `SILO BASE\n${'-'.repeat(30)}\n`
-      organized.base.forEach(({ name, comment }) => {
-        output += `\n${name}:\n${comment}\n`
+    const formatSection = (title, items) => {
+      if (items.length === 0) return ''
+      let section = `${title}\n${'-'.repeat(30)}\n`
+      items.forEach(({ name, comments: cmts }) => {
+        section += `\n${name}:\n`
+        cmts.forEach(c => {
+          section += `  [${c.name} - ${new Date(c.timestamp).toLocaleString()}]\n`
+          section += `  ${c.text}\n\n`
+        })
       })
-      output += `\n`
+      return section
     }
 
-    if (organized.customer.length > 0) {
-      output += `CUSTOMER SEGMENTS\n${'-'.repeat(30)}\n`
-      organized.customer.forEach(({ name, comment }) => {
-        output += `\n${name}:\n${comment}\n`
-      })
-      output += `\n`
-    }
-
-    if (organized.function.length > 0) {
-      output += `FUNCTIONS\n${'-'.repeat(30)}\n`
-      organized.function.forEach(({ name, comment }) => {
-        output += `\n${name}:\n${comment}\n`
-      })
-      output += `\n`
-    }
-
-    if (organized.liteType.length > 0) {
-      output += `LITE PORTAL TYPES\n${'-'.repeat(30)}\n`
-      organized.liteType.forEach(({ name, comment }) => {
-        output += `\n${name}:\n${comment}\n`
-      })
-    }
+    output += formatSection('SILO BASE', organized.base)
+    output += formatSection('CUSTOMER SEGMENTS', organized.customer)
+    output += formatSection('FUNCTIONS', organized.function)
+    output += formatSection('LITE PORTAL TYPES', organized.liteType)
 
     // Create and download file
     const blob = new Blob([output], { type: 'text/plain' })
@@ -222,11 +303,14 @@ function App() {
             <h1>Silo Modular Architecture Planner</h1>
             <p className="subtitle">Toggle customer types to see required functions</p>
           </div>
-          {getCommentCount() > 0 && (
-            <button className="export-btn" onClick={exportComments}>
-              📥 Export Feedback ({getCommentCount()})
-            </button>
-          )}
+          <div className="header-actions">
+            {isLoadingComments && <span className="loading-indicator">Loading comments...</span>}
+            {getCommentCount() > 0 && (
+              <button className="export-btn" onClick={exportComments}>
+                📥 Export Feedback ({getCommentCount()})
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -244,11 +328,11 @@ function App() {
           {siloBase.functions.map(fn => (
             <span 
               key={fn.id} 
-              className={`function-chip base-chip ${comments[`function:${fn.id}`] ? 'has-comment' : ''}`}
+              className={`function-chip base-chip ${hasComments('function', fn.id) ? 'has-comment' : ''}`}
               onClick={() => openModal(fn, 'function')}
             >
               {fn.name}
-              {comments[`function:${fn.id}`] && <span className="comment-dot">💬</span>}
+              {hasComments('function', fn.id) && <span className="comment-dot">💬</span>}
             </span>
           ))}
         </div>
@@ -297,14 +381,14 @@ function App() {
                       onChange={() => toggleCustomer(ct.id)}
                     />
                     <span 
-                      className={`customer-name ${comments[`customer:${ct.id}`] ? 'has-comment' : ''}`}
+                      className={`customer-name ${hasComments('customer', ct.id) ? 'has-comment' : ''}`}
                       onClick={(e) => {
                         e.preventDefault()
                         openModal(ct, 'customer')
                       }}
                     >
                       {ct.name}
-                      {comments[`customer:${ct.id}`] && <span className="comment-indicator">💬</span>}
+                      {hasComments('customer', ct.id) && <span className="comment-indicator">💬</span>}
                     </span>
                     <span className="function-count">
                       {ct.functions.length}
@@ -332,7 +416,7 @@ function App() {
                 .sort((a, b) => (b.customers?.length || 0) - (a.customers?.length || 0))
                 .map(fn => {
                   const availableInLite = isAvailableInLite(fn.id)
-                  const hasComment = comments[`function:${fn.id}`]
+                  const itemHasComments = hasComments('function', fn.id)
                   
                   // Determine if greyed out based on view mode
                   let isGreyedOut = false
@@ -345,7 +429,7 @@ function App() {
                   return (
                     <div 
                       key={fn.id} 
-                      className={`function-card ${isGreyedOut ? 'greyed-out' : ''} ${hasComment ? 'has-comment' : ''} ${viewMode !== 'all' ? (fn.siloStatus ? 'silo-does' : 'silo-doesnt') : ''}`}
+                      className={`function-card ${isGreyedOut ? 'greyed-out' : ''} ${itemHasComments ? 'has-comment' : ''} ${viewMode !== 'all' ? (fn.siloStatus ? 'silo-does' : 'silo-doesnt') : ''}`}
                       onClick={() => openModal(fn, 'function')}
                     >
                       <div className="function-name">
@@ -353,7 +437,7 @@ function App() {
                           <span className="silo-status-icon">{fn.siloStatus ? '✓' : '✗'}</span>
                         )}
                         {fn.name}
-                        {hasComment && <span className="comment-dot">💬</span>}
+                        {itemHasComments && <span className="comment-dot">💬</span>}
                       </div>
                       <div className="function-customers">
                         {fn.customers?.length > 1 
@@ -483,13 +567,46 @@ function App() {
             {/* Comment Section - shown on all modals */}
             <div className="comment-section">
               <h3>💬 Feedback</h3>
-              <textarea
-                className="comment-input"
-                placeholder="Add your thoughts, questions, or suggestions..."
-                value={getCurrentComment()}
-                onChange={(e) => updateComment(e.target.value)}
-                rows={3}
-              />
+              
+              {/* Existing comments */}
+              {getCurrentComments().length > 0 && (
+                <div className="comments-list">
+                  {getCurrentComments().map((comment, idx) => (
+                    <div key={idx} className="comment-item">
+                      <div className="comment-header">
+                        <span className="comment-author">{comment.name}</span>
+                        <span className="comment-time">{formatTimeAgo(comment.timestamp)}</span>
+                      </div>
+                      <div className="comment-text">{comment.text}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {/* Add new comment */}
+              <div className="add-comment">
+                <input
+                  type="text"
+                  className="name-input"
+                  placeholder="Your name"
+                  value={commenterName}
+                  onChange={(e) => setCommenterName(e.target.value)}
+                />
+                <textarea
+                  className="comment-input"
+                  placeholder="Add your thoughts, questions, or suggestions..."
+                  value={newCommentText}
+                  onChange={(e) => setNewCommentText(e.target.value)}
+                  rows={3}
+                />
+                <button 
+                  className="add-comment-btn"
+                  onClick={addComment}
+                  disabled={!newCommentText.trim() || !commenterName.trim() || isSubmitting}
+                >
+                  {isSubmitting ? 'Submitting...' : 'Add Comment'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

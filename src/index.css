@@ -722,3 +722,94 @@ body {
   color: #f59e0b;
   font-weight: 500;
 }
+
+/* Comments List */
+.comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.comment-item {
+  background: #0f172a;
+  border-radius: 6px;
+  padding: 0.75rem;
+  border-left: 3px solid #3b82f6;
+}
+
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.comment-author {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #60a5fa;
+}
+
+.comment-time {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.comment-text {
+  font-size: 0.875rem;
+  color: #cbd5e1;
+  line-height: 1.5;
+}
+
+/* Add Comment Form */
+.add-comment {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.name-input {
+  width: 100%;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  padding: 0.75rem;
+  color: #e2e8f0;
+  font-size: 0.875rem;
+  font-family: inherit;
+}
+
+.name-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.name-input::placeholder {
+  color: #64748b;
+}
+
+.add-comment-btn {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+  align-self: flex-end;
+}
+
+.add-comment-btn:hover {
+  background: #2563eb;
+}
+
+.add-comment-btn:disabled {
+  background: #334155;
+  cursor: not-allowed;
+  color: #64748b;
+}
