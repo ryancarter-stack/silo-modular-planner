@@ -99,6 +99,22 @@ function App() {
     const key = getCommentKey()
     if (!key || !newCommentText.trim() || !commenterName.trim()) return
     
+    const commentText = newCommentText.trim()
+    const name = commenterName.trim()
+    
+    // Optimistically update local state FIRST (instant feedback)
+    const newComment = {
+      name,
+      text: commentText,
+      timestamp: Date.now()
+    }
+    
+    setComments(prev => ({
+      ...prev,
+      [key]: [...(prev[key] || []), newComment]
+    }))
+    
+    setNewCommentText('')
     setIsSubmitting(true)
     
     try {
@@ -108,28 +124,19 @@ function App() {
       
       await apiAddComment({
         key,
-        name: commenterName.trim(),
-        text: newCommentText.trim(),
+        name,
+        text: commentText,
         issueNumber
       })
       
-      // Optimistically update local state
-      const newComment = {
-        name: commenterName.trim(),
-        text: newCommentText.trim(),
-        timestamp: Date.now()
-      }
-      
+      // Refresh comments from server to get accurate data (issue numbers, etc)
+      setTimeout(loadComments, 1500)
+    } catch (error) {
+      // Roll back optimistic update on error
       setComments(prev => ({
         ...prev,
-        [key]: [...(prev[key] || []), newComment]
+        [key]: (prev[key] || []).filter(c => c.timestamp !== newComment.timestamp)
       }))
-      
-      setNewCommentText('')
-      
-      // Refresh comments from server to get accurate data
-      setTimeout(loadComments, 1000)
-    } catch (error) {
       alert('Failed to add comment: ' + error.message)
     } finally {
       setIsSubmitting(false)
