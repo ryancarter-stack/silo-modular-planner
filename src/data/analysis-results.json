@@ -1,0 +1,770 @@
+{
+  "grower:labor-scheduling": {
+    "functionName": "Labor Scheduling",
+    "customerType": "Grower",
+    "capability": "No",
+    "summary": "Silo does not have labor scheduling capability. The platform focuses on supply chain management (inventory, orders, delivery routing, pricing, and accounting) with team/membership management for users only. While the system tracks 'Cost of Labor' as an expense category for financial reporting, there are no models, APIs, or UI components for workforce scheduling, crew assignment, shift management, or piece-rate compensation.",
+    "notionFindings": "The Notion search revealed one unrelated result - a 'Rate Limiter' interview question in the hiring database. No Notion pages exist documenting labor scheduling, workforce management, crew scheduling, or piece-rate functionality.",
+    "notionLinks": [],
+    "codeFindings": "Silo includes 'Cost of Labor' as an ExpenseCategory enum value for financial categorization only. Team/Membership entities exist for internal user management and permissions, not worker/crew scheduling. DeliveryReport handles delivery route assignment for orders but focuses on logistics. A 'schedule' enum exists but only for repayment scheduling in accounting. No worker, crew, shift, or roster entities found.",
+    "codeLocations": [
+      "silo-go/enums/ledger/expense_category.go",
+      "silo-go/db/models/expense.go",
+      "silo-go/ent/team/",
+      "silo-go/ent/membership/",
+      "silo-go/enums/schedule/type.go",
+      "silo-go/business/delivery/delivery_report.go"
+    ],
+    "analyzedAt": "2024-12-20T00:00:00Z"
+  },
+  "grower:harvest-recording": {
+    "functionName": "Harvest Recording",
+    "customerType": "Grower",
+    "capability": "Partial",
+    "summary": "Silo has foundational inventory lot management capability that supports recording inbound inventory transactions (including agricultural harvests via ManualLot creation), but the 'Harvests' epic remains in 'Researching' status as of September 2024. The system supports lot tracing, WMS scanning operations for order fulfillment, and inventory management, but lacks dedicated harvest-specific UI/features for field recording workflows common in agricultural operations.",
+    "notionFindings": "Harvests Epic is in 'Researching' status under IMS pod with no connected product specs. WMS capability documented in Product Wiki with mobile scanner functionality. IMS QoL Improvements epic currently under development. Pick Ticket Document referenced as feature dependency.",
+    "notionLinks": [
+      {"title": "Harvests Epic", "url": "https://www.notion.so/Harvests-7db606b5103c42c68a845a0ee13ce6d2"},
+      {"title": "IMS QoL Improvements", "url": "https://www.notion.so/IMS-QoL-Improvements-f655b3e539d042c28ccdf4f25016049a"},
+      {"title": "Pick Ticket Document Feature", "url": "https://www.notion.so/Pick-Ticket-Document-fix-and-simplify-BOL-754db16d7d5d49eca1738912a2e4fb62"},
+      {"title": "Silo Product Wiki - Inventory", "url": "https://www.notion.so/Inventory-Products-Units-0b48b7f67bb04a20ad5e2e90f1a22bcc"}
+    ],
+    "codeFindings": "Trace Types enum includes PurchaseLot, ManualLot, RepackLot, TransferLot for inbound traces with comment noting 'Purchase and harvests are good examples of inbound traces.' WMS/Scanning operations support ScanLots(), StartScanSalesOrder(), CompleteScanSalesOrder() with WMSScanToPick permission. Warehouse Management feature flag exists. Delta Traces architecture supports transformed_from relationships. No dedicated harvest recording UI or bin/picker/productivity tracking features found.",
+    "codeLocations": [
+      "silo-go/enums/tracetype/type.go",
+      "silo-go/services/seller/sales_order_warehouse.go",
+      "silo-go/db/migrations/20200317131600_AddTransformedFromToTracesTable.go",
+      "silo-web/src/utils/warehouseManagement.ts",
+      "silo-go/db/trace.go"
+    ],
+    "analyzedAt": "2024-12-20T00:00:00Z"
+  },
+  "grower:cost-tracking": {
+    "functionName": "Cost Tracking",
+    "customerType": "Grower",
+    "capability": "Yes",
+    "summary": "Silo implements a sophisticated expense and cost tracking system that captures costs associated with purchase orders, sales orders, inventory lots, and inventory transfers. The system calculates lot profitability through breakeven costs, includes multiple expense distribution strategies (auto, amount-based, per-unit, per-pallet), and integrates with the accounting module for journal entry automation.",
+    "notionFindings": "Extensive development around cost tracking documented including: Accounting > Internal Costs, Repacks > Expense Automations, AP > Expenses, Purchasing > Expenses. 'Expenses and lot profitability' epic tracks costs tied to lot profitability. Features include manual expense distribution, auto distribution by unit and by pallet, expense account automation for Chart of Accounts.",
+    "notionLinks": [
+      {"title": "Accounting > Internal Costs", "url": "https://www.notion.so/Accounting-Internal-Costs-99dd4a97021c434f9548847758eddd88"},
+      {"title": "Repacks > Expense Automations", "url": "https://www.notion.so/Repacks-Expense-Automations-20d99272cafc80729942cd06ef23e489"},
+      {"title": "AP > Expenses", "url": "https://www.notion.so/AP-Expenses-dc4c82af7c6d4af0bafb51952a13a1fb"},
+      {"title": "Purchasing > Expenses", "url": "https://www.notion.so/Purchasing-Expenses-47c21803f1e948559fac039fc7faee8d"},
+      {"title": "Expenses and lot profitability", "url": "https://www.notion.so/Expenses-and-lot-profitability-ee8fd6940a5643efac77f13d8d9aab89"}
+    ],
+    "codeFindings": "Core Expense struct supports 6 expense types: Independent, Purchase Order, Sales Order, Lot Purchase, Purchase Order Item, Inventory Transfer. 25+ expense categories from Freight to Utilities. LotCostMargin calculates breakeven cost (purchase cost + expense cost). ExpenseConnection supports per-unit and per-pallet distribution. Integration with QuickBooks for expense syncing. Payment status tracking (Unpaid, Partially Paid, Paid). Full UI components for expense management, inline expense browser, and repack expense automation.",
+    "codeLocations": [
+      "silo-go/protocol/expense.go",
+      "silo-go/db/models/expense.go",
+      "silo-go/db/lot_costs.go",
+      "silo-go/ent/schema/expense.go",
+      "silo-go/db/expense.go",
+      "silo-go/db/inline_expense.go",
+      "silo-web/src/core/models/Expenses/",
+      "silo-web/src/fetch/Expenses/",
+      "silo-web/src/containers/Accounting/components/AccountsPayable/Expenses/"
+    ],
+    "analyzedAt": "2024-12-20T00:00:00Z"
+  },
+  "grower:sales-orders": {
+    "functionName": "Sales Orders",
+    "customerType": "Grower",
+    "capability": "Yes",
+    "summary": "Silo has a fully implemented Sales Orders capability with comprehensive features including order creation, management, fulfillment tracking, delivery routing, and payment handling. The system tracks order statuses (confirmed, delivered, cancelled), supports multiple transport methods, delivery routes, and includes advanced features like AI-powered order corrections and warehouse scanning. FOB and consignment-related order details are partially supported through EDI integration with Orderful.",
+    "notionFindings": "Multiple feature specifications documented under Sales > SO Screen, Sales > Orders List, Sales > Order Templates. Advanced features tracked including Multi-Order Mode, Omnibar search, Packing workflows, Printing/Emailing, Scanning, Pricing Guidance, Credits, and Delivery Routes. EDI integration for orders archived but previously implemented. Online Ordering system with order management capabilities.",
+    "notionLinks": [
+      {"title": "Sales > SO Screen", "url": "https://www.notion.so/Sales-SO-Screen-11039cbecf83440e9ca10518d8761476"},
+      {"title": "Sales > Orders List", "url": "https://www.notion.so/Sales-Orders-List-9beedbdfddf8425da23186bd360e0eef"},
+      {"title": "Sales > Order Templates", "url": "https://www.notion.so/Sales-Order-Templates-873c7c446361474c9b6a6686632dd687"},
+      {"title": "Purchasing > Orders List", "url": "https://www.notion.so/Purchasing-Orders-List-14c130f8de714d42b62fa5fbfa1ae6a9"},
+      {"title": "Reports > Sales", "url": "https://www.notion.so/Reports-Sales-879c91adab9042ac9837d73f6dfad728"}
+    ],
+    "codeFindings": "Core Sales Order model tracks RequestedDate, FulfilledDate, PickupDate, CancelledAt, TransportMethod. Three-state status system (confirmed, delivered, cancelled). DeliveryRoute associations for fulfillment. EDI/Orderful integration handles FOBRelatedInstructions. AI-powered sales order corrections via AISalesOrderCorrection entity. Warehouse scanning workflows (ScanningStartedAt, LastScanActionAt). Credit order support with auto-apply. Frontend includes comprehensive order list views, multi-order mode, fulfillment tracking, scanning workflow, and 20+ E2E test files.",
+    "codeLocations": [
+      "silo-go/db/models/sales_order.go",
+      "silo-go/db/models/order_status.go",
+      "silo-go/protocol/sales_order.go",
+      "silo-go/business/ai/sales_orders.go",
+      "silo-go/business/orders/op_sale_*.go",
+      "silo-go/clients/orderful/messages.go",
+      "silo-go/services/seller/controller_sales_orders.go",
+      "silo-go/services/seller/sales_order_warehouse.go",
+      "silo-web/cypress/integration/Orders/SalesOrders/"
+    ],
+    "analyzedAt": "2024-12-20T00:00:00Z"
+  },
+  "grower:invoicing": {
+    "functionName": "Invoicing",
+    "customerType": "Grower",
+    "capability": "Yes",
+    "summary": "Silo has a mature and comprehensive invoicing capability spanning both Accounts Receivable (AR) and capital/funding operations. The system supports invoice creation, management, payment tracking, and integration with QuickBooks Online. Invoice functionality extends to itemized invoicing, instant pay/funding, and customer-facing digital payments with multiple distribution channels (email, fax, print).",
+    "notionFindings": "AR > Invoices is the primary invoicing feature (last updated Oct 2025). Invoice distribution methods include email, fax, print, and digital payments. Accounting Invoices Filter Usage actively tracked. Instant Pay Accounting epic completed. Multiple payment reconciliation tracking workflows documented. Customer pain points around invoice reconciliation and payment selection documented.",
+    "notionLinks": [
+      {"title": "AR > Invoices", "url": "https://www.notion.so/AR-Invoices-03dbd430cac84cb8904c4f372a9428bc"},
+      {"title": "Invoicing Epic", "url": "https://www.notion.so/Invoicing-ba37a05791c746c4af06bdb532d0e73c"},
+      {"title": "Instant Pay Accounting", "url": "https://www.notion.so/Instant-Pay-Accounting-18c7f32e318e4b15a0185abfbe07c886"},
+      {"title": "Invoice sent - Email", "url": "https://www.notion.so/Invoice-sent-Email-e916e3b454f04526b8aff59cdc436c23"},
+      {"title": "Accounting invoices filter usage", "url": "https://www.notion.so/Accounting-invoices-filter-usage-d25ace654ff2452cae86a70ca37084a4"}
+    ],
+    "codeFindings": "Invoice Funding System supports bulk creation with fee calculations, funding terms, repayment scheduling, and status tracking (NotFunded, FullyFunded, PendingFunding, Snoozed). QuickBooks integration provides itemized invoice line items with product details. Zeus Collections Invoice model for customer-facing operations. Manual invoice upload and EDI invoice message processing supported. Frontend includes full invoices table with filtering, payment recording, export, journal entry details for paid invoices. Instant Pay and Digital Payments modules for funding and customer payment portal.",
+    "codeLocations": [
+      "silo-go/protocol/invoice.go",
+      "silo-go/ent/schema/invoicefunding.go",
+      "silo-go/business/capital/invoice_fundings.go",
+      "silo-go/business/capital/manual_invoice_upload.go",
+      "silo-go/business/quickbooks/accounts_receivable.go",
+      "silo-go/business/edi/invoice_message.go",
+      "silo-web/src/containers/Accounting/components/Invoices/",
+      "silo-web/src/containers/Accounting/components/InstantPay/",
+      "silo-web/src/containers/Accounting/components/DigitalPayments/"
+    ],
+    "analyzedAt": "2024-12-20T00:00:00Z"
+  },
+  "grower:general-ledger-banking": {
+    "functionName": "General Ledger and Banking",
+    "customerType": "Grower",
+    "capability": "Yes",
+    "summary": "Silo has a comprehensive General Ledger capability with full journal entry management, accounting account structure, and ledger reporting. The system includes bank reconciliation functionality for matching transactions against bank statements. Banking capabilities include bank account data structures, incoming bank transaction processing through Modern Treasury integration, and bank balance tracking.",
+    "notionFindings": "Accounting > Ledgers is the core ledger feature. Reports: General Ledger provides transaction grouping by account. Chart of Accounts manages account structure. Accounting > Bank Reconciliation module documented. Bank API (Chase) transition tracked for 2024 Q1. Online Transaction Matching and Bank Reconciliation Improvements in researching status.",
+    "notionLinks": [
+      {"title": "Accounting > Ledgers", "url": "https://www.notion.so/Accounting-Ledgers-c5c3e14972854235bfd4e7e5e6ca7561"},
+      {"title": "Reports: General Ledger", "url": "https://www.notion.so/Reports-General-Ledger-59301b5a85964f9da0dc5cd92ebd63d1"},
+      {"title": "Accounting > Chart of Accounts", "url": "https://www.notion.so/Accounting-Chart-of-Accounts-4608e351dac54b55b962ec35220ddc9e"},
+      {"title": "Accounting > Bank Reconciliation", "url": "https://www.notion.so/Accounting-Bank-Reconciliation-c858a33af44a42dcaf381861c9716451"},
+      {"title": "Bank API (Chase) transition", "url": "https://www.notion.so/Bank-API-Chase-transition-1dad71bd67f648c6a7fad12bce31e318"}
+    ],
+    "codeFindings": "CreateLedgerTransaction() creates double-entry ledger transactions with Modern Treasury integration. ReverseLedgerTransaction() handles cancellations. LedgerEntry model supports Debit/Credit direction. Journal entry management with period adjustments. Bank reconciliation via OpReconciliationCreate with target balance matching. IncomingBankTransaction handles received transactions with entity tagging. BankBalance schema tracks balances with timestamps. Multiple account types supported (Asset, Liability, Equity, Expense, Revenue).",
+    "codeLocations": [
+      "silo-go/business/money/ledger.go",
+      "silo-go/business/accounting/journal_entries.go",
+      "silo-go/services/accounting/controller_accounting_accounts.go",
+      "silo-go/ent/schema/ledgertransaction.go",
+      "silo-go/ent/schema/journalentry.go",
+      "silo-go/business/money/incoming_bank_transaction.go",
+      "silo-go/business/accounting/op_reconciliation_create.go",
+      "silo-go/ent/schema/bankbalance.go",
+      "silo-web/src/containers/Accounting/components/E2EAccounting/Ledgers/"
+    ],
+    "analyzedAt": "2024-12-20T00:00:00Z"
+  },
+  "grower:accounts-payable": {
+    "functionName": "Accounts Payable",
+    "customerType": "Grower",
+    "capability": "Yes",
+    "summary": "Silo implements a complete Accounts Payable system that manages vendor payments across purchase orders and expenses. The platform tracks payables with sophisticated filtering, sorting, and reporting capabilities, supports multiple payment methods (ACH, checks, credit cards, cash), and integrates with QuickBooks Online for synchronization. Core features include vendor credit management, payment reconciliation, journal entry automation, and cash flow analysis.",
+    "notionFindings": "AP > Overview provides main dashboard. AP > Expenses, AP > Payments, AP > Credits, AP > BillPay, and AP > Debt Aging are documented feature areas. Migrate AP to Payabli scheduled for Dec 2025. Contacts > Vendors handles vendor master. QuickBooks Integration provides full AP sync.",
+    "notionLinks": [
+      {"title": "AP > Payments", "url": "https://www.notion.so/AP-Payments-f2ad2e38cd874d9f9867d6eae2108168"},
+      {"title": "AP > Overview", "url": "https://www.notion.so/AP-Overview-77025490374e4fd6a1f80ccef22ffb4e"},
+      {"title": "AP > Expenses", "url": "https://www.notion.so/AP-Expenses-dc4c82af7c6d4af0bafb51952a13a1fb"},
+      {"title": "AP > Credits", "url": "https://www.notion.so/AP-Credits-046c110e0a17467aa51fb3dd8ef495ff"},
+      {"title": "AP > BillPay", "url": "https://www.notion.so/AP-BillPay-45b29f134b6c4b2e83444c9f702e97b4"},
+      {"title": "AP > Debt Aging", "url": "https://www.notion.so/AP-Debt-Aging-018da50902414788aa3985ebaf2726c1"}
+    ],
+    "codeFindings": "AccountsPayable struct tracks vendor info, amounts, payment status, and journal entries. PaymentMethod enum includes ACH, Check, Credit Card, Cash on Delivery, Off-Silo, Credit Memo. QuickBooks integration syncs bills, vendor credits, and payments. BillPay service handles payment execution. Advanced filtering by vendor, date ranges, payment status. Pagination and sorting support. Comprehensive test coverage for AP workflows.",
+    "codeLocations": [
+      "silo-go/db/accounts_payable.go",
+      "silo-go/db/models/payment.go",
+      "silo-go/business/quickbooks/accounts_payable.go",
+      "silo-go/business/pay/billpay.go",
+      "silo-go/business/pay/vendor_payment.go",
+      "silo-go/business/pay/digital_payment.go",
+      "silo-go/services/billing/controller_payments.go",
+      "silo-go/cmd/platform-app/accounts_payable_test.go"
+    ],
+    "analyzedAt": "2024-12-20T00:00:00Z"
+  },
+  "grower:purchase-orders": {
+    "functionName": "Purchase Orders",
+    "customerType": "Grower",
+    "capability": "Yes",
+    "summary": "Silo has a comprehensive Purchase Orders feature enabling buyers to create, manage, receive, and track purchase orders from vendors. The implementation includes order creation and editing, receiving/fulfillment tracking with auto-receive capabilities, inventory lot management, vendor portal integration, QuickBooks synchronization, and expenses tracking. Key features include flagging, printing/emailing, credit orders/returns, and performance metrics reporting.",
+    "notionFindings": "Purchasing > PO Screen for managing individual orders. Purchasing > Orders List for browsing POs. Purchasing > Receiving for marking received. Purchasing > Expenses for order costs. Purchasing > Vendor Portal for vendor visibility. Purchasing > Settlement Calculator for reconciliation. Related epics include Lot and PO Performance and Vendor Portal Improvements.",
+    "notionLinks": [
+      {"title": "Purchasing > PO Screen", "url": "https://www.notion.so/Purchasing-PO-Screen-9340dd19239d453692dee208f6cd3f20"},
+      {"title": "Purchasing > Orders List", "url": "https://www.notion.so/Purchasing-Orders-List-14c130f8de714d42b62fa5fbfa1ae6a9"},
+      {"title": "Purchasing > Receiving", "url": "https://www.notion.so/Purchasing-Receiving-3800774224d54641810c67162a0d3e4c"},
+      {"title": "Purchasing > Expenses", "url": "https://www.notion.so/Purchasing-Expenses-47c21803f1e948559fac039fc7faee8d"},
+      {"title": "Purchasing > Vendor Portal", "url": "https://www.notion.so/Purchasing-Vendor-Portal-d9d69a7998ef419d83457ef560804c29"},
+      {"title": "Purchasing > Settlement Calculator", "url": "https://www.notion.so/Purchasing-Settlement-Calculator-741614e112a94eacb63635cd99bee883"}
+    ],
+    "codeFindings": "Purchase order entity with full lifecycle tracking (requested_date, received_date, cancelled_at). PurchaseOpReceive manages receiving, auto-receiving, and auto-unreceiving workflows. Order status lifecycle: Confirmed -> Delivered or Cancelled. QuickBooks sync for bills and vendor credits. EDI support via Orderful integration. Controllers for create, find, receive, update, and hold operations. Permission-based access control. Document generation with HTML templates. Comprehensive Cypress E2E tests.",
+    "codeLocations": [
+      "silo-go/db/models/purchase_order.go",
+      "silo-go/ent/schema/purchaseorder.go",
+      "silo-go/business/orders/op_purchase_receive.go",
+      "silo-go/services/buyer/controller_purchase_order_create.go",
+      "silo-go/services/buyer/controller_purchase_order_receive.go",
+      "silo-go/services/buyer/controller_purchase_order_update.go",
+      "silo-go/business/quickbooks/v2/op_sync_purchase_order_bills.go",
+      "silo-web/src/containers/Orders/PurchaseOrders/",
+      "silo-web/cypress/integration/Orders/PurchaseOrders/"
+    ],
+    "analyzedAt": "2024-12-20T00:00:00Z"
+  },
+  "grower:inventory": {
+    "functionName": "Inventory",
+    "customerType": "Grower",
+    "capability": "Yes",
+    "summary": "Silo has a robust Inventory Management System (IMS) with detailed quantity tracking across multiple states, location-based management, lot-level tracking, and reconciliation workflows. The system provides comprehensive quantity calculations (on-hand, available-to-sell, allocated, incoming, etc.) and supports inventory transfers between locations, deactivation of inactive items, and cascading inventory calculations for unit conversions.",
+    "notionFindings": "Extensive IMS documentation including: Inventory > O/H & Available Quantities, Multiple Locations & Transfers, Inactive items, Cascades (unit conversion), Oversold/Unlotted, Pallets, Price Sheets, PTI Labels, Reconciliation, Sales Transfers. Reports > Inventory for reporting. Lots features for performance, printing, and waste tracking. IMS QoL Improvements epic active.",
+    "notionLinks": [
+      {"title": "Inventory > O/H & Available Quantities", "url": "https://www.notion.so/Inventory-O-H-Available-Quantities-af3a0ef5dcdc43f3a1d8aacd32e0237b"},
+      {"title": "Inventory > Multiple Locations & Transfers", "url": "https://www.notion.so/Inventory-Multiple-Locations-Location-Transfers-72431c959af8419b9c0189eaee998b55"},
+      {"title": "Inventory > Cascades", "url": "https://www.notion.so/Inventory-Cascades-4efdf54111f24c81a7aeabcd5bc286cd"},
+      {"title": "Inventory > Reconciliation", "url": "https://www.notion.so/Inventory-Reconciliation-651594d27d2c46c8a96cdc5b7fd70e36"},
+      {"title": "Inventory > Products & Units", "url": "https://www.notion.so/Inventory-Products-Units-0b48b7f67bb04a20ad5e2e90f1a22bcc"},
+      {"title": "Reports > Inventory", "url": "https://www.notion.so/Reports-Inventory-1ae0e6e2325c45deb8434cdb1d3763d0"}
+    ],
+    "codeFindings": "13 distinct count types defined: OnHand, AvailableToSell, Allocated, Incoming, Physical, Hold, InternalTransfer, ReturnToSender, TransferredOut, Sales, Lotted, Unlotted, Total. Multi-location warehouse support with transfer tracking (draft, pending, received). Physical count reconciliation via UpdateInventoryPhysicalQuantity. Deactivation prevents oversold items from being removed. Cascading inventory for unit conversions with ratio formulas. Lot-level tracking with auto-close workflows. Comprehensive frontend with search, filtering, reconciliation UI, and reporting.",
+    "codeLocations": [
+      "silo-go/db/inventory.go",
+      "silo-go/db/inventory_quantity.go",
+      "silo-go/db/inventory_counts.go",
+      "silo-go/db/inventory_manager.go",
+      "silo-go/db/inventory_manager_transfer.go",
+      "silo-go/db/models/inventory.go",
+      "silo-go/enums/count/type.go",
+      "silo-go/services/inventory/controller.go",
+      "silo-go/services/inventory/controller_transfers.go",
+      "silo-web/src/types/business/inventory.d.ts",
+      "silo-web/src/containers/Inventory/Inventory/"
+    ],
+    "analyzedAt": "2024-12-20T00:00:00Z"
+  },
+  "grower:shipping": {
+    "functionName": "Shipping",
+    "customerType": "Grower",
+    "capability": "Partial",
+    "summary": "Silo has moderately developed shipping capability with support for freight booking, quote management, and delivery routing. The platform implements FTL and LTL freight management with multi-stop logistics, temperature control, and real-time status tracking. Delivery routes are implemented for sellers with cost and charge configurations. However, the Logistics features (Freight Loads, LTL, Instant Freight Quote) are archived, indicating reduced focus on comprehensive carrier integration.",
+    "notionFindings": "Sales > Delivery Routes is actively used. Pick Ticket Document (fix and simplify BOL) is committed as Core Improvement. Change Ship to address on SO level feature documented. Logistics > Freight Loads, LTL, Instant Freight Quote, and Pickup Locations are all archived status, suggesting reduced priority for standalone logistics features.",
+    "notionLinks": [
+      {"title": "Sales > Delivery Routes", "url": "https://www.notion.so/Sales-Delivery-Routes-73b60871f5924e7099e7917e21c669b9"},
+      {"title": "Pick Ticket Document (BOL)", "url": "https://www.notion.so/Pick-Ticket-Document-fix-and-simplify-BOL-754db16d7d5d49eca1738912a2e4fb62"},
+      {"title": "Change Ship to address on SO level", "url": "https://www.notion.so/Change-Ship-to-address-on-SO-level-d7cb89d753f1496696544d21f88d3748"},
+      {"title": "Logistics > Freight Loads (Archived)", "url": "https://www.notion.so/Logistics-Freight-Loads-53b81bf3e7a0491ea452e61a40dd10ba"},
+      {"title": "Logistics > LTL (Archived)", "url": "https://www.notion.so/Logistics-LTL-6ebfb6d9f2a040339507dd8e928ab6d4"},
+      {"title": "Logistics > Instant Freight Quote (Archived)", "url": "https://www.notion.so/Logistics-Instant-Freight-Quote-IFQ-6e8fcc0f8e874a5092fc208970856ec3"}
+    ],
+    "codeFindings": "FreightLoad, FreightQuote, FreightLane, FreightJob entities with full CRUD. FTL and LTL support with multi-stop routing. Temperature and pallet tracking. DeliveryRoute entity with zip codes, time-based availability, cost structures. FreightLoadStatusEvent for real-time tracking. ShipToAddress on Sales Orders. BOL number fields on Purchase Orders. GraphQL API for freight management. BOL document templates and pick ticket generation. External quote ID integration (Uber Freight). Sendbird chat integration for freight coordination.",
+    "codeLocations": [
+      "silo-go/business/freight/",
+      "silo-go/ent/schema/freightload.go",
+      "silo-go/ent/schema/freightquote.go",
+      "silo-go/ent/schema/deliveryroute.go",
+      "silo-go/protocol/freight.go",
+      "silo-go/protocol/delivery_routes.go",
+      "silo-go/services/seller/controller_delivery.go",
+      "silo-go/graph/schema/freight.graphqls",
+      "silo-go/lib/document/templates/multi-doc/partial/bol.html",
+      "silo-web/src/containers/Seller/components/SellerLogistics/",
+      "silo-web/src/containers/Seller/components/SellerDeliveryRoutes/"
+    ],
+    "analyzedAt": "2024-12-20T00:00:00Z"
+  },
+  "grower:repacking": {
+    "functionName": "Repacking",
+    "customerType": "Grower",
+    "capability": "Yes",
+    "summary": "Silo has a fully implemented and mature Repacking capability that enables inventory transformation and re-handling. The system supports two distribution methods (by unit or by weight), multiple input/output lots, expense automation, and template-based repack workflows. Implementation spans backend with database models, GraphQL APIs, and frontend with complete UI components and reporting.",
+    "notionFindings": "Core feature 'Repacks' is in 'In Review' status as a major product epic for IMS pod. Well-developed specifications including Repacks > Overview, Expense Automations, and Templates. Supporting features: Advanced Repacks (1:Many), weight-based distribution, custom lot number generation. Operational metrics tracking for waste and expense by output lot.",
+    "notionLinks": [
+      {"title": "Repacks > Overview", "url": "https://www.notion.so/Repacks-Overview-8946467c7fca47898985b8563f5f1544"},
+      {"title": "Repacks > Expense Automations", "url": "https://www.notion.so/Repacks-Expense-Automations-20d99272cafc80729942cd06ef23e489"},
+      {"title": "Repacks > Templates", "url": "https://www.notion.so/Repacks-Templates-1e399272cafc805f9ab8e26d24ea9c92"},
+      {"title": "Advanced Repacks", "url": "https://www.notion.so/Advanced-Repacks-f970486c451f46278fc7fa4f75a10bd0"},
+      {"title": "Distribute by weight (Repacks)", "url": "https://www.notion.so/Distribute-by-weight-Repacks-7ba8063398394f2b83f88ed86ce0ac60"}
+    ],
+    "codeFindings": "Complete repack domain with controller handling GET/POST/PUT operations. Database models for Repack, RepackTemplate, RepackTemplateItem, RepackOutputExpenseTemplate entities. Distribution type enum supporting DistributeByUnit and DistributeByWeight. Expense automation system for automatic expense allocation. Delta trace system tracking inventory transformations with RepackTransfer and RepackLot trace types. Frontend includes 30+ components with modal-based creation/editing, template support, and history views.",
+    "codeLocations": [
+      "silo-go/services/inventory/controller_repack.go",
+      "silo-go/services/inventory/controller_repack_templates.go",
+      "silo-go/db/repack.go",
+      "silo-go/db/repack_output_expense_template.go",
+      "silo-go/ent/schema/repack.go",
+      "silo-go/enums/repackenum/distribution_type.go",
+      "silo-web/src/components/Repack/Modal/RepackModal.tsx",
+      "silo-web/src/core/models/Repack/Repack.ts",
+      "silo-web/src/containers/Repacks/"
+    ],
+    "analyzedAt": "2024-12-20T00:00:00Z"
+  },
+  "grower:price-list": {
+    "functionName": "Price List",
+    "customerType": "Grower",
+    "capability": "Yes",
+    "summary": "Silo has a fully implemented Price List capability that supports customer-specific pricing through Price Sheets with availability date ranges. The system enables sellers to create multiple price sheets with different pricing structures, assign them to customers, and manage effective dates for promotions and seasonal pricing. Features include dependent pricing with multipliers and hierarchical price sheet structures.",
+    "notionFindings": "Inventory > Price Sheets is an active feature. Recent epics include Price Sheet Improvements & Standalone Functionality (2025 Q1, Done) and Enable Per-Pallet (LTL) Pricing (2024 Q1, Done). Sales > Pricing Guidance helps salespeople navigate customer-specific pricing. Strategic documents for Silo Pricing Strategy and Contract Strategy documented.",
+    "notionLinks": [
+      {"title": "Inventory > Price Sheets", "url": "https://www.notion.so/Inventory-Price-Sheets-3b9fac725eb14bd9a823734a49c69398"},
+      {"title": "Sales > Pricing Guidance", "url": "https://www.notion.so/Sales-Pricing-Guidance-44e09b8746e84f9c92f03b408d9ea876"},
+      {"title": "Price Sheet Improvements & Standalone Functionality", "url": "https://www.notion.so/Price-Sheet-Improvements-Standalone-Functionality-89983ccb7f3645898731b4f325123cd4"},
+      {"title": "Silo Pricing Strategy", "url": "https://www.notion.so/Silo-Pricing-Strategy-bf23b9b91f5d4e5f9b61807f81c196d0"}
+    ],
+    "codeFindings": "PriceSheet entity with availability_start_date and availability_end_date fields for time-based pricing. Multiplier field for dependent/relative pricing. Parent_price_sheet_id for hierarchical structures. PriceSheetItem tracks price per inventory item with IsDependent flag. SharedPrice database view shares prices with OMS customers via customer_vendor_relationships. Customer assignment via price_sheet_id linking. Email delivery with date parameters. Break-even price sheet tracking with lot assignments.",
+    "codeLocations": [
+      "silo-go/db/models/price_sheet.go",
+      "silo-go/ent/schema/pricesheet.go",
+      "silo-go/ent/schema/sharedprices.go",
+      "silo-go/ent/schema/customervendorrelationship.go",
+      "silo-go/db/price_sheet.go",
+      "silo-go/services/seller/controller_price_sheets.go",
+      "silo-web/src/fetch/priceSheets.ts",
+      "silo-web/src/containers/Inventory/Inventory/PriceSheetEditor/"
+    ],
+    "analyzedAt": "2024-12-20T00:00:00Z"
+  },
+  "grower:charge-tags": {
+    "functionName": "Charge Tags",
+    "customerType": "Grower",
+    "capability": "No",
+    "summary": "Silo does not currently have implemented Charge Tags functionality for grower billing or cost allocation. While Silo has extensive billing infrastructure (bill pay, payment processing, repayment allocations), there is no evidence of charge tag or cost allocation capabilities specifically designed for grower billing scenarios. The codebase shows repayment allocation logic but not charge tag tagging or cost splitting for multiple grower scenarios.",
+    "notionFindings": "Multiple Notion pages reference grower-related features (Grower/Shipper Demo Script, Research: Grower lending products, Grower Portal Sync) but no documentation of charge tags. Pages discuss Upchain-Downchain Payments operations but don't mention grower-specific billing allocation. Found Using Silo to bill for Silo and general Billing Operations but no charge tag allocation system.",
+    "notionLinks": [
+      {"title": "Using Silo to bill for Silo", "url": "https://www.notion.so/Using-Silo-to-bill-for-Silo-19899272cafc8008b29dfc14b8cd61e8"},
+      {"title": "Billing Operations", "url": "https://www.notion.so/Billing-Operations-693dcd2ee6984ccb9b80442f14504309"},
+      {"title": "Grower/Shipper Demo Script (WIP)", "url": "https://www.notion.so/Grower-Shipper-Demo-Script-WIP-fd1f7908d2bd4ac5a377da1f021451da"},
+      {"title": "Research: Grower lending products", "url": "https://www.notion.so/Research-Grower-lending-products-fda65ca503204d55aa1d84439acac8de"}
+    ],
+    "codeFindings": "Billing infrastructure exists in /services/billing/ with QuickBooks integration and payment processing. Repayment and RepaymentAllocation entities support allocation of cash advances across invoice fundings - NOT for cost allocation. DocumentTag enum exists for onboarding document organization, not billing. AccountingAutomationMapping for accounting integrations but no charge tag mapping. QuickBooks ItemOtherCharge queries import charge items from QB but not a Silo-native charge tag system.",
+    "codeLocations": [
+      "silo-go/services/billing/",
+      "silo-go/ent/schema/repayment.go",
+      "silo-go/enums/onboardingenum/document_tag.go",
+      "silo-go/services/billing/quickbooks/quickbooks_step_item_other_charge_query.go"
+    ],
+    "analyzedAt": "2024-12-20T00:00:00Z"
+  },
+  "grower:grower-accounting": {
+    "functionName": "Grower Accounting",
+    "customerType": "Grower",
+    "capability": "Partial",
+    "summary": "Silo has a mature settlement processing system focused on collections/downchain payments (settlements with customers), but grower accounting capability for upchain settlement (paying vendors/growers) is limited to basic vendor payment functionality. Settlement calculations and notifications exist, but grower-specific accounting (harvest recording reconciliation with settlement, consignment accounting) are not explicitly implemented as dedicated features.",
+    "notionFindings": "Settlement Calculator referenced in Purchasing area (research spec from May 2023, archived). Vendor Portal and Settlements Improvements epic is Deprioritized. Grower/Shipper Demo Script exists as WIP. No dedicated Grower Settlement or Grower Accounting specification pages found. Searches for consignment and grower payment yielded zero dedicated features.",
+    "notionLinks": [
+      {"title": "Purchasing > Settlement Calculator", "url": "https://www.notion.so/Purchasing-Settlement-Calculator-741614e112a94eacb63635cd99bee883"},
+      {"title": "Grower/Shipper Demo Script (WIP)", "url": "https://www.notion.so/Grower-Shipper-Demo-Script-WIP-fd1f7908d2bd4ac5a377da1f021451da"},
+      {"title": "Settlement Calculator (Core - Inventory)", "url": "https://www.notion.so/Settlement-Calculator-ea0042a25230444e8ebe5c6d7bf5f87a"},
+      {"title": "Vendor Portal and Settlements Improvements", "url": "https://www.notion.so/Vendor-Portal-and-Settlements-Improvements-94758cd7624e49f08df6aca631d0f73f"}
+    ],
+    "codeFindings": "Settlement document generation with payment grouping (ACH, Check, Credit Card, Direct). Settlement calculator for POs with lot-level cost calculations. Settlement email notifications with PDF attachments. Frontend settlements report with filtering. Upchain payments controller makes vendor payments via check or digital/Stripe. Grower portal controller provides PO visibility and payment collection with passwordless authentication. Key gaps: No consignment accounting, no harvest-to-settlement reconciliation, no grower AR/settlement statements, no advance/deduction tracking.",
+    "codeLocations": [
+      "silo-go/services/buyer/controller_settlement_calculator.go",
+      "silo-go/lib/document/settlement.go",
+      "silo-go/business/pay/notification/settlement.go",
+      "silo-go/services/buyer/controller_grower_portal.go",
+      "silo-go/services/billing/controller_upchain_payments.go",
+      "silo-web/src/containers/Reports/FinancialReports/SettlementsReport/",
+      "silo-web/src/core/models/Orders/PurchaseOrders/SettlementCalculator.ts"
+    ],
+    "analyzedAt": "2024-12-20T00:00:00Z"
+  },
+  "grower:inventory-transfers": {
+    "functionName": "Inventory Transfers",
+    "customerType": "Grower",
+    "capability": "Yes",
+    "summary": "Silo has a fully implemented Inventory Transfers capability that supports multi-warehouse/multi-location movements. The feature enables users to transfer inventory items (both lotted and unlotted) between different locations, with comprehensive tracking, documentation, and status management. The implementation includes complete CRUD operations, financial period locking, permission-based access control, and document generation (pick tickets and BOLs).",
+    "notionFindings": "Inventory > Multiple Locations & Location Transfers is documented with last update Nov 2025. Inventory > Sales Transfers provides specialized transfer functionality for sales scenarios. Transfers workflow is tracked in product roadmap. Integration with expense management documented via Connecting Expenses feature.",
+    "notionLinks": [
+      {"title": "Inventory > Multiple Locations & Location Transfers", "url": "https://www.notion.so/Inventory-Multiple-Locations-Location-Transfers-72431c959af8419b9c0189eaee998b55"},
+      {"title": "Inventory > Sales Transfers", "url": "https://www.notion.so/Inventory-Sales-Transfers-807db4bc74f24365adbf37d653552ff8"}
+    ],
+    "codeFindings": "Controller with GetInventoryTransfers, CreateInventoryTransfer, PatchInventoryTransfer, DeleteInventoryTransfer. Source/destination location filtering. Lot and unlotted inventory support. Financial period locking validation. Document generation (pick tickets, BOLs). Entity schema with source_location_id, destination_location_id (immutable), date, received_at, created_by_user_id, received_by_user_id. Frontend InventoryTransfer class with MobX state management. Complete UI with list view, create wizard, edit modal, status filtering.",
+    "codeLocations": [
+      "silo-go/services/inventory/controller_transfers.go",
+      "silo-go/protocol/transfers.go",
+      "silo-go/db/transfers.go",
+      "silo-go/ent/schema/inventorytransfer.go",
+      "silo-go/db/inventory_manager_transfer.go",
+      "silo-web/src/core/models/InventoryTransfer.ts",
+      "silo-web/src/containers/Seller/components/Transfers/",
+      "silo-web/src/fetch/transfers.ts"
+    ],
+    "analyzedAt": "2024-12-20T00:00:00Z"
+  },
+  "grower:multiple-currency": {
+    "functionName": "Multiple Currency",
+    "customerType": "Grower",
+    "capability": "No",
+    "summary": "Silo does not currently have multi-currency support for financial transactions and reporting. The system is hardcoded for USD-only operations with basic currency formatting helpers. While the codebase can parse currency codes from external integrations (Uber Freight, Orderful), there is no database schema or business logic to support multiple currencies on transactions, mixed-currency orders, or exchange rate management.",
+    "notionFindings": "Multi Currency Support epic exists with 'Not Started' status (dated 2024-06-13, Treasury pod). Support more currencies (Mexican pesos) was a Q4 2023 research project that never advanced. Related multi-entity and multi-accounting features also marked 'Not Started'.",
+    "notionLinks": [
+      {"title": "Multi-Currency Support", "url": "https://www.notion.so/Multi-Currency-Support-8e98a56b402748fa96e7cb18af7d6243"},
+      {"title": "Support more currencies (Mexican pesos)", "url": "https://www.notion.so/Support-more-currencies-Mexican-pesos-b952b26fc9e64bc38e29095421daf053"}
+    ],
+    "codeFindings": "Currency utilities in lib/currency/ provide basic USD formatting only. Money type uses microdollars storage (10^6) with USD assumption. Frontend hardcodes CURRENCY='USD' with TODO comment for internationalization. Transaction, SalesOrder, PurchaseOrder, Payment, and OrderLineItem schemas have no currency field. External integrations (Uber, Orderful, Plaid) can parse incoming currency codes but Silo doesn't store or process them.",
+    "codeLocations": [
+      "silo-go/lib/currency/currency.go",
+      "silo-go/lib/money/money.go",
+      "silo-web/src/utils/numeric.tsx",
+      "silo-go/ent/schema/transaction.go",
+      "silo-go/ent/schema/salesorder.go",
+      "silo-go/ent/schema/purchaseorder.go",
+      "silo-go/ent/schema/payment.go"
+    ],
+    "analyzedAt": "2024-12-20T00:00:00Z"
+  },
+  "grower:sales-loads": {
+    "functionName": "Sales Loads",
+    "customerType": "Grower",
+    "capability": "Partial",
+    "summary": "Silo has foundational freight load infrastructure with support for multi-stop loads, pallet/weight tracking, and quote management, but lacks dedicated sales load consolidation and order-to-load allocation features. The system can create individual freight loads linked to sales orders but doesn't provide UI or API-level functionality for consolidating multiple sales orders into single delivery loads or automating freight allocation by quantity/weight/pallet parameters.",
+    "notionFindings": "Build Multi-Stop Loads (TMS V1) epic is Deprioritized. Allow Silo users to Share Loads and Allow Shippers to Share Loads features are completed. Logistics > Freight Loads is archived. Connect order to existing load workflow exists. Freight Booking Improvements and Freight MVP epics completed.",
+    "notionLinks": [
+      {"title": "Build Multi-Stop Loads (TMS V1)", "url": "https://www.notion.so/Build-Multi-Stop-Loads-TMS-V1-02e4b802b45949269949449ce1155d71"},
+      {"title": "Allow Silo users to Share Loads", "url": "https://www.notion.so/Allow-Silo-users-to-Share-Loads-with-All-Silo-Users-5aafa9741f2c4e989564bfadac675ae6"},
+      {"title": "Freight Booking Improvements", "url": "https://www.notion.so/Freight-Booking-Improvements-3b6880509b3d4c27b7680a785aa6fff9"},
+      {"title": "Logistics > Freight Loads", "url": "https://www.notion.so/Logistics-Freight-Loads-53b81bf3e7a0491ea452e61a40dd10ba"},
+      {"title": "Sales > Delivery Routes", "url": "https://www.notion.so/Sales-Delivery-Routes-73b60871f5924e7099e7917e21c669b9"}
+    ],
+    "codeFindings": "FreightLoad schema includes pallet_count, estimated_weight, sales_order_id (single order link), and purchase_order_id. Multi-stop support with pickup/delivery addresses. Load type (FTL/LTL) support. CreateBookingV2() creates individual loads with optional quote. LTL validation requires freight lane and pallet count. Key gaps: No batch order consolidation logic, no allocation algorithm, single order per load link only, no load optimization UI.",
+    "codeLocations": [
+      "silo-go/business/freight/freight.go",
+      "silo-go/db/freight_load_loader.go",
+      "silo-go/ent/schema/freightload.go",
+      "silo-go/ent/schema/salesorder.go",
+      "silo-go/graph/schema/freight.graphqls",
+      "silo-go/enums/freight/load_type.go"
+    ],
+    "analyzedAt": "2024-12-20T00:00:00Z"
+  },
+  "grower:work-orders": {
+    "functionName": "Work Orders",
+    "customerType": "Grower",
+    "capability": "Partial",
+    "summary": "Silo has implemented a sophisticated Repacks feature that serves as a value-added goods manufacturing capability for managing raw materials and packaging. While the system lacks a formal 'Work Order' or 'BOM' concept by name, it provides templated, distributed production operations with expense allocation. The Repacks feature handles input-to-output lot transformations with flexible distribution methods (by unit or weight) and integrated accounting.",
+    "notionFindings": "Repacks > Overview, Repacks > Templates, and Repacks > Expense Automations are documented features. Major Repacks epic (Feb 2023, active July 2025) shows significant investment. Productionalize Seeder epic (Researching, 2025 Q3) suggests expansion of manufacturing capabilities. Categorized under Inventory product area.",
+    "notionLinks": [
+      {"title": "Repacks Overview", "url": "https://www.notion.so/Repacks-Overview-8946467c7fca47898985b8563f5f1544"},
+      {"title": "Repacks Templates", "url": "https://www.notion.so/Repacks-Templates-1e399272cafc805f9ab8e26d24ea9c92"},
+      {"title": "Repacks Expense Automations", "url": "https://www.notion.so/Repacks-Expense-Automations-20d99272cafc80729942cd06ef23e489"},
+      {"title": "Repacks Epic", "url": "https://www.notion.so/Repacks-8ab7781c67424b5fadd452822b38f3a4"}
+    ],
+    "codeFindings": "CreateRepackBody handles input/output lot definitions with distribution types (DistributeByUnit, DistributeByWeight). RepackExpense associates costs with output lots including account allocation and accounting integration. Templates enable repeatable processes with HasLinkedQuantities. Repack types: oneToOne, oneToMany, manyToOne, manyToMany. Key gaps: No explicit BOM data structure, no production scheduling, no line production sequencing.",
+    "codeLocations": [
+      "silo-go/protocol/repack.go",
+      "silo-go/services/inventory/controller_repack.go",
+      "silo-go/services/inventory/controller_repack_templates.go",
+      "silo-go/services/inventory/repack_output_expense_template.go",
+      "silo-web/src/utils/repacks.ts",
+      "silo-web/src/fetch/repacks.ts"
+    ],
+    "analyzedAt": "2024-12-20T00:00:00Z"
+  },
+  "grower:brokerage-system": {
+    "functionName": "Brokerage System",
+    "customerType": "Grower",
+    "capability": "Partial",
+    "summary": "Silo has foundational infrastructure for commission tracking (CommissionsAndFees expense category exists and is mapped in expense model) and supports transaction processing with flexible expense distribution. However, there is no dedicated brokerage order type, drop-ship functionality, or pass-through inventory management system. The 'Upchain from broker' transaction type is documented in Notion but not implemented as a specific feature.",
+    "notionFindings": "Types of transaction database documents 'Upchain from broker' as a business model (Seller=Broker, Buyer=Distributor/Wholesaler). Vendor Portal P/L and Commission is an active feature. Broker Interviews and Broker Research Questions exist but focus on market research rather than product implementation.",
+    "notionLinks": [
+      {"title": "Upchain from broker", "url": "https://usesilo.notion.so/Upchain-from-broker-4120d2de3c0b46908899b8773ed6b3b6"},
+      {"title": "Vendor Portal P/L and Commission", "url": "https://www.notion.so/Vendor-Portal-P-L-and-Commission-94ef7b6f9c6c4ee2882fc580441819eb"},
+      {"title": "Broker Interviews", "url": "https://www.notion.so/Broker-Interviews-5ccb1f5abc6648cbb8c0665895d998fb"},
+      {"title": "Broker Research Questions", "url": "https://www.notion.so/Broker-Research-Questions-f4812d401dd2495d8e04768c9aaeea9c"}
+    ],
+    "codeFindings": "CommissionsAndFees is defined ExpenseCategory with full support. Expenses can map to PurchaseOrder, SalesOrder, Lot, InventoryTransfer. Multiple distribution strategies (auto, amount-based, by pallet, by unit). Key gaps: No brokerage/drop-ship order type classification, no supplier pass-through pricing, no mechanism to skip inventory receipt for straight-through transactions, commission not connected to brokerage flows.",
+    "codeLocations": [
+      "silo-go/enums/ledger/expense_category.go",
+      "silo-go/db/models/expense.go",
+      "silo-go/ent/schema/transaction.go",
+      "silo-go/ent/schema/salesorder.go",
+      "silo-go/ent/schema/purchaseorder.go",
+      "silo-go/ent/schema/lot.go"
+    ],
+    "analyzedAt": "2024-12-20T00:00:00Z"
+  },
+  "grower:inventory-room-row": {
+    "functionName": "Inventory Room/Row",
+    "customerType": "Grower",
+    "capability": "Partial",
+    "summary": "Silo has basic warehouse location tracking with a simple string-based warehouse_location field at the inventory level and RF scanning capabilities for lot assignment in sales orders. However, it lacks the structured room/row/bin/slot hierarchy needed for comprehensive warehouse location management. The Mobile Scanning + WMS epic is in 'Researching' status indicating future development plans.",
+    "notionFindings": "Inventory > Multiple Locations & Location Transfers is core location support. Mobile Scanning + WMS epic is in Researching status. Desktop Scanning is Under Dev. Using mobile scanners for warehouse stowing and picking is identified but marked inactive. Sales > Scanning feature area exists.",
+    "notionLinks": [
+      {"title": "Inventory > Multiple Locations & Location Transfers", "url": "https://www.notion.so/Inventory-Multiple-Locations-Location-Transfers-72431c959af8419b9c0189eaee998b55"},
+      {"title": "Mobile Scanning + WMS", "url": "https://www.notion.so/Mobile-Scanning-WMS-0ff33637deeb4b818e9873a60e5b1505"},
+      {"title": "Desktop Scanning", "url": "https://www.notion.so/Desktop-Scanning-12869e49fca64c4fb5adbb04ececcbab"},
+      {"title": "Sales > Scanning", "url": "https://www.notion.so/Sales-Scanning-c541c32f471b4b18991e854ce2fc1e0a"}
+    ],
+    "codeFindings": "Migration adds warehouse_location string field to inventory (simple flat field, no hierarchy). GraphQL warehouseLocation field with text search predicates. WarehouseLocationCell allows manual entry (50 char max). Scan to Assign Lots feature uses keyboard scanner for barcode scanning. hasWMS module flag and isWarehouseManagementEnabled feature flag exist. Key gaps: No room/row/bin/slot hierarchy, no RF terminal integration, no location audit trails, no picking/packing workflows.",
+    "codeLocations": [
+      "silo-go/db/migrations/20221128153202_AddInventoryWarehouseLocation.go",
+      "silo-go/ent/schema/inventory.go",
+      "silo-web/src/utils/warehouseManagement.ts",
+      "silo-web/src/components/Inventory/InventoryTableCells/WarehouseLocationCell.tsx",
+      "silo-web/src/components/Orders/SalesOrders/SalesOrder/ViewSalesOrder/ScanToAssignLots/"
+    ],
+    "analyzedAt": "2024-12-20T00:00:00Z"
+  },
+  "grower:consolidated-financials": {
+    "functionName": "Consolidated Financials",
+    "customerType": "Grower",
+    "capability": "Partial",
+    "summary": "Silo has foundational infrastructure for multi-entity accounting including intercompany transfers, journal entries, and ledger transactions, but does not yet have fully developed consolidated financial reporting across multiple companies/entities. The codebase includes IntercompanyTransfer product type and multi-entity accounting as a planned feature (currently 'Not Started' status). The system tracks individual entity financials but lacks aggregation and elimination logic for true consolidation.",
+    "notionFindings": "Multi Entity Accounting epic exists with 'Not Started' status in Treasury pod. Intercompany Transfer capability is partially implemented. Related features: Multi Currency Support (In Progress), Multi-Location support (Released as Sapphire Edition), Multi-COGS/Revenue/Inventory Assets per item.",
+    "notionLinks": [
+      {"title": "Multi Entity Accounting", "url": "https://www.notion.so/usesilo/Multi-Entity-Accounting-f4d2bf56abda44a290778c764b800710"},
+      {"title": "Multi Currency Support", "url": "https://www.notion.so/usesilo/Multi-Currency-Support-8e98a56b402748fa96e7cb18af7d6243"},
+      {"title": "Multi-Locations Sapphire Edition", "url": "https://www.notion.so/usesilo/Multi-Locations-Iteration-2-Sapphire-Edition-724841b751544080b14cb8b69fb16d66"}
+    ],
+    "codeFindings": "IntercompanyTransfer is a ProductType enum value with specific handling in money_transfer_handler.go. Comprehensive ledger transaction infrastructure with journal entries and line items. Account schema supports relationships to multiple child entities. QuickBooks and Codat integrations support multi-entity syncing but not consolidation reporting. Key gaps: No parent account or consolidation group fields, no cross-account aggregation logic, no elimination entries for intercompany transactions.",
+    "codeLocations": [
+      "silo-go/enums/moneyenum/product_type.go",
+      "silo-go/business/pay/money_transfer_handler.go",
+      "silo-go/ent/schema/ledgertransaction.go",
+      "silo-go/ent/schema/journalentry.go",
+      "silo-go/ent/schema/account.go",
+      "silo-go/services/billing/quickbooks/"
+    ],
+    "analyzedAt": "2024-12-20T00:00:00Z"
+  },
+  "grower:pooling": {
+    "functionName": "Pooling",
+    "customerType": "Grower",
+    "capability": "No",
+    "summary": "Silo currently does not have pooling capability implemented. The system has foundational elements (grower portal, lot management, settlement infrastructure, repacks), but lacks the specific pooling settlement model for multi-grower consolidated sales and grade-based revenue allocation. There is no sizer/sampling system integration for capturing size distribution and grade percentages needed for pool settlement calculations.",
+    "notionFindings": "Grower/Shipper Demo Script (WIP) indicates ongoing grower-focused development. Grower Portal Sync is inactive. Research: Grower lending products shows expansion exploration. QA grades/spoiled/returned feature exists for basic quality tracking. No dedicated pooling or pool settlement features documented.",
+    "notionLinks": [
+      {"title": "Grower/Shipper Demo Script (WIP)", "url": "https://www.notion.so/Grower-Shipper-Demo-Script-WIP-fd1f7908d2bd4ac5a377da1f021451da"},
+      {"title": "Grower Portal Sync", "url": "https://www.notion.so/Grower-Portal-Sync-9529d47ed5e743e6b9bd359ac2d8f53b"},
+      {"title": "Research: Grower lending products", "url": "https://www.notion.so/Research-Grower-lending-products-fda65ca503204d55aa1d84439acac8de"},
+      {"title": "QA grades / spoiled / returned", "url": "https://www.notion.so/QA-grades-spoiled-returned-by-country-region-of-origin-b685ba4c9bd74a1e9572af39c3d6ae35"}
+    ],
+    "codeFindings": "Grower portal API exists with PO views showing lot-level detail. Support for different share levels (basic/detailed sales data). Lot schema with lot_number, inventory tracking, cost calculations. MasterLot for shipment grouping. Settlement notifications with PDF reports. Key gaps: No pool entity, no grade/quality tracking per grower contribution, no sizer/sampling integration, no pack-out matrix, no proportional revenue allocation for commingled product.",
+    "codeLocations": [
+      "silo-go/protocol/grower_portal.go",
+      "silo-go/business/pay/notification/settlement.go",
+      "silo-go/ent/schema/lot.go",
+      "silo-go/ent/schema/vendor.go",
+      "silo-go/ent/schema/repack.go"
+    ],
+    "analyzedAt": "2024-12-20T00:00:00Z"
+  },
+  "grower:grower-lots": {
+    "functionName": "Grower Lots",
+    "customerType": "Grower",
+    "capability": "Yes",
+    "summary": "Silo has implemented a Master Lot (Grower Lots) capability providing traceability for shipments and inventory grouping across both vessel/voyage and truck transport methods. The system supports master lot identification with vessel, container, bill of lading, voyage numbers, and includes a Grower Portal for sharing purchase order details with suppliers. This enables additional traceability for loads and inventory identification through parent-child lot relationships.",
+    "notionFindings": "Lots (Overview) is core feature (updated Oct 2025). Traceability + Food Safety + FMSA 204 compliance features documented. Custom Repack Lot Numbers allows custom lot numbering. Lot and PO Performance tracks metrics. Build Multi-Stop Loads and Allow Shippers to Share Loads for freight integration. Grower/Shipper Demo Script shows grower portal capabilities.",
+    "notionLinks": [
+      {"title": "Lots (Overview)", "url": "https://www.notion.so/Lots-Overview-77617487481942a38b62dbcecbdfa13a"},
+      {"title": "Traceability + Food Safety + FMSA 204", "url": "https://www.notion.so/Traceability-Food-Safety-FMSA-204-9abb0594f2104933b3e35f0010252fc1"},
+      {"title": "Custom Repack Lot Numbers", "url": "https://www.notion.so/Custom-Repack-Lot-Numbers-51b51a5584db47f3ad458d4a9ecd365f"},
+      {"title": "Grower/Shipper Demo Script (WIP)", "url": "https://www.notion.so/Grower-Shipper-Demo-Script-WIP-fd1f7908d2bd4ac5a377da1f021451da"}
+    ],
+    "codeFindings": "MasterLot schema supports VOYAGE and TRUCK shipment types with vessel_name, vessel_line, voyage_number, container_number, bill_of_lading for vessel; truck_broker, driver_name, license_number, trailer_number for truck. Lots reference master lots via master_lot_id field. Grower portal provides JWT-authenticated access with configurable share levels. Complete Lot protocol with order items, inventory, origin, performance, costs, and margins.",
+    "codeLocations": [
+      "silo-go/ent/schema/masterlot.go",
+      "silo-go/ent/schema/lot.go",
+      "silo-go/enums/masterlotenum/type.go",
+      "silo-go/protocol/lot.go",
+      "silo-go/protocol/lot_detail.go",
+      "silo-go/cmd/platform-app/grower_portal_test.go",
+      "silo-web/src/core/models/VendorPortal.ts"
+    ],
+    "analyzedAt": "2024-12-20T00:00:00Z"
+  },
+  "grower:advanced-repacking": {
+    "functionName": "Advanced Repacking",
+    "customerType": "Grower",
+    "capability": "Yes",
+    "summary": "Silo has a complete Advanced Repacking system that supports combining multiple input sources (both grower and purchased products) on the same repack run while maintaining full traceability. The system supports many-to-many repack operations where multiple input lots from different sources can be combined into one or more output lots. Traceability is maintained through delta traces linking each input lot to its output lots via RepackTransfer traces.",
+    "notionFindings": "Advanced Repacks epic documented with 1:Many pattern specification. Repacks > Overview shows current implementation. Repacks > Templates for standardized processes. Repacks > Expense Automations for cost allocation. Feature commitment page confirms this is a delivered capability.",
+    "notionLinks": [
+      {"title": "Advanced Repacks", "url": "https://www.notion.so/Advanced-Repacks-f970486c451f46278fc7fa4f75a10bd0"},
+      {"title": "Advanced Repacks - 1:Many", "url": "https://www.notion.so/Advanced-Repacks-1-Many-121c106739c342f89e9d0a111687bca1"},
+      {"title": "Repacks > Overview", "url": "https://www.notion.so/Repacks-Overview-8946467c7fca47898985b8563f5f1544"},
+      {"title": "Repacks > Templates", "url": "https://www.notion.so/Repacks-Templates-1e399272cafc805f9ab8e26d24ea9c92"}
+    ],
+    "codeFindings": "CreateRepackInputLots array accepts multiple source lots tracked independently. CreateRepackOutputLots allows distributing to multiple destinations with by-unit or by-weight distribution. RepackTransfer delta traces link input lots to destination lots via ParentLotID and DestinationLotID. RepackID groups all traces for single operation. transformed_from field tracks transformations. Frontend supports OneToOne, OneToMany, ManyToOne, ManyToMany types. Location constraint requires all inputs share same location.",
+    "codeLocations": [
+      "silo-go/protocol/repack.go",
+      "silo-go/db/repack.go",
+      "silo-go/db/models/delta_trace.go",
+      "silo-go/db/delta_trace_loader.go",
+      "silo-go/enums/tracetype/type.go",
+      "silo-web/src/core/models/Repack/Repack.ts",
+      "silo-web/src/components/Repack/Modal/InputTable.tsx"
+    ],
+    "analyzedAt": "2024-12-20T00:00:00Z"
+  },
+  "grower:pallet-consolidation": {
+    "functionName": "Pallet Consolidation",
+    "customerType": "Grower",
+    "capability": "Partial",
+    "summary": "Silo has pallet splitting capability that breaks a single output quantity into multiple pallets based on units-per-pallet definitions, but does not have pallet consolidation that combines products from multiple pallet tags into one physical pallet. The system can split pallets for distribution and tracks pallet counts/weights, but lacks the inverse operation of merging multiple pallets.",
+    "notionFindings": "Inventory > Pallets is main pallet management feature. Enable Per-Pallet (LTL) Pricing completed. Pallet Definitions core data model. Pallet Labels for printing. Auto distribute PO expenses by pallet feature. Palletization feature (committed 2022). No specific pallet consolidation or combine pallets documentation found.",
+    "notionLinks": [
+      {"title": "Inventory > Pallets", "url": "https://www.notion.so/Inventory-Pallets-873c4bd0415549098fbd8900bd9eaf2e"},
+      {"title": "Enable Per-Pallet (LTL) Pricing", "url": "https://www.notion.so/Enable-Per-Pallet-LTL-Pricing-a4b391177b924181a9d37ddb5355e807"},
+      {"title": "Pallet Definitions", "url": "https://www.notion.so/Pallet-Definitions-3b5656046e0646efbc7106595c21d883"},
+      {"title": "Pallet Labels", "url": "https://www.notion.so/Pallet-Labels-6a531f04037d498b99b88f77be646e4a"},
+      {"title": "Palletization", "url": "https://www.notion.so/Palletization-e47b2c38796640cc9a18b70d4be4d512"}
+    ],
+    "codeFindings": "PalletWeight struct provides calculations for total pallets, weight in kg/lb, per-pallet metrics. splitOutputItemsIntoPallets() in Repack.ts splits outputs based on unitsPerPallet with remainder handling. Pallet utility functions: calculateTotalPallets, getPalletWeights, getNumberOfPallets. Pallet label document generation controller. Key gaps: No merge, consolidate, or combine functions for multiple pallets, only splitting capability exists.",
+    "codeLocations": [
+      "silo-go/db/models/pallet_weight.go",
+      "silo-go/services/document/controller_pallet_label.go",
+      "silo-web/src/core/models/Repack/Repack.ts",
+      "silo-web/src/utils/pallets.ts"
+    ],
+    "analyzedAt": "2024-12-20T00:00:00Z"
+  },
+  "grower:payroll-suite": {
+    "functionName": "Payroll Suite (Payroll, Crew Entry, Multi-State, Direct Deposit)",
+    "customerType": "Grower",
+    "capability": "No",
+    "summary": "Silo does not have payroll capabilities. The platform focuses on supply chain management (inventory, orders, payments) rather than HR/payroll functions. While 'Direct Deposit' exists as a vendor payment method and QuickBooks employee sync pulls basic employee roster data for accounting, there is no payroll processing, crew/timesheet management, multi-state tax handling, or employee direct deposit functionality.",
+    "notionFindings": "Payroll features in Notion are marked 'Maybe' status (conceptual only): Payroll External Integration with Processor, Payroll Commission and Salary Tracker. Both pages are empty placeholders from January 2022. No crew, timesheet, or multi-state payroll documentation found.",
+    "notionLinks": [
+      {"title": "Payroll: External Integration with Processor", "url": "https://www.notion.so/Payroll-External-Integration-with-Processor-42f6cddb1adb443a8e36389061eb285b"},
+      {"title": "Payroll: Commission and Salary Tracker", "url": "https://www.notion.so/Payroll-Commission-and-Salary-Tracker-875733681094438cbcb2f5115e0eb4fe"}
+    ],
+    "codeFindings": "Payment infrastructure in /business/pay/ handles vendor/supplier payments only (ACH, checks, digital). DirectDeposit is a PaymentMethod for vendor payments, not employee payroll. QWCEmployee sync from QuickBooks pulls basic employee metadata for accounting purposes only. No Payroll, Timesheet, Crew, Wage, or multi-state tax entities exist in the schema.",
+    "codeLocations": [
+      "silo-go/business/pay/",
+      "silo-go/services/billing/quickbooks/quickbooks_step_employee_query.go",
+      "silo-go/db/models/payment.go"
+    ],
+    "analyzedAt": "2024-12-21T00:00:00Z"
+  },
+  "grower:charge-tags-variants": {
+    "functionName": "Charge Tags variants (from Inventory, from Payroll, from AP)",
+    "customerType": "Grower",
+    "capability": "Partial",
+    "summary": "Silo has a comprehensive Expense cost allocation system that can distribute charges across Purchase Orders, Sales Orders, Lots, and Inventory Transfers, but lacks a dedicated 'Charge Tag' scan-to-apply system. Expenses support multiple distribution modes (auto, by-unit, by-pallet, manual amount) and can be linked to AP (via PayableToAccountID), inventory operations, and independent sources. However, there is no payroll-to-charge integration since payroll doesn't exist.",
+    "notionFindings": "No specific 'Charge Tags' documentation found. Related pages include Accounting > Internal Costs (non-payable expenses vs AP expenses), AP > Expenses, Purchasing > Expenses. Expense distribution and allocation are documented but not as a tag-based system.",
+    "notionLinks": [
+      {"title": "Accounting > Internal Costs", "url": "https://www.notion.so/Accounting-Internal-Costs-99dd4a97021c434f9548847758eddd88"},
+      {"title": "AP > Expenses", "url": "https://www.notion.so/AP-Expenses-dc4c82af7c6d4af0bafb51952a13a1fb"},
+      {"title": "Purchasing > Expenses", "url": "https://www.notion.so/Purchasing-Expenses-47c21803f1e948559fac039fc7faee8d"}
+    ],
+    "codeFindings": "Expense entity supports 6 types: Independent, PurchaseOrder, SalesOrder, LotPurchase, PurchaseOrderItem, InventoryTransfer. ExpenseLink (expense_connections table) allows one expense to be allocated across multiple entities. Distribution types: auto, amount, autoByPallet, autoByUnit. PayableToAccountID links to vendors for AP. ExpenseAccountID and LiabilityAccountID for journal entry automation. Key gaps: No scan-to-apply tag workflow, no payroll charge source (payroll doesn't exist).",
+    "codeLocations": [
+      "silo-go/db/models/expense.go",
+      "silo-go/ent/schema/expense.go",
+      "silo-go/ent/schema/expenselink.go",
+      "silo-web/src/components/Expenses/ExpenseFormDrawer/",
+      "silo-web/src/components/Expenses/ConnectExpensesDrawer/"
+    ],
+    "analyzedAt": "2024-12-21T00:00:00Z"
+  },
+  "grower:sales-office-inquiry": {
+    "functionName": "Sales Office Inquiry",
+    "customerType": "Grower",
+    "capability": "Yes",
+    "summary": "Silo has comprehensive sales inquiry and order visibility capabilities. The system provides CustomerOrderSummary for customer order history with payment status, multiple sales reports (by item, by expense, pricing compliance), real-time inventory availability via Omnibar, Grower Portal for vendor visibility into orders/sales, and Payment Portal for customer payment tracking. All core 'Sales Office Inquiry' functions are implemented.",
+    "notionFindings": "Sales > SO Screen and Sales > Orders List are core order inquiry features. Reports > Sales provides dashboards. Sales > Omnibar enables real-time search. Vendor Portal (Grower Portal) shows order visibility to suppliers. OMS features for online ordering. Inventory O/H Visibility released Jan 2023.",
+    "notionLinks": [
+      {"title": "Sales > SO Screen", "url": "https://www.notion.so/Sales-SO-Screen-11039cbecf83440e9ca10518d8761476"},
+      {"title": "Sales > Orders List", "url": "https://www.notion.so/Sales-Orders-List-9beedbdfddf8425da23186bd360e0eef"},
+      {"title": "Reports > Sales", "url": "https://www.notion.so/Reports-Sales-879c91adab9042ac9837d73f6dfad728"},
+      {"title": "Inventory O/H Visibility", "url": "https://www.notion.so/Inventory-O-H-Visibility-Incoming-Outgoing-etc-5dc39d940f6944e997a3c76dd1a56ab8"}
+    ],
+    "codeFindings": "CustomerOrderSummary protocol with TotalOrdered and order details including PaymentStatus, OrderStatus. GetCustomerSummary() service returns orders within date range. SalesByItemReport, SalesByInlineExpenseReport, SalesOutsideRangeReport for sales analytics. GrowerPortalPurchaseOrderView for vendor order visibility. useCustomerSummaryQuery() React hook. Real-time inventory via Omnibar controller. Complete frontend with order list views, status tracking, and reporting.",
+    "codeLocations": [
+      "silo-go/protocol/sales_order.go",
+      "silo-go/services/seller/controller_customers.go",
+      "silo-go/services/seller/controller_report.go",
+      "silo-go/services/seller/controller_omnibar.go",
+      "silo-go/protocol/grower_portal.go",
+      "silo-web/src/fetch/customers.ts",
+      "silo-web/src/fetch/salesReports.ts",
+      "silo-web/src/containers/Reports/SalesReports/"
+    ],
+    "analyzedAt": "2024-12-21T00:00:00Z"
+  },
+  "grower:blockchain-traceability": {
+    "functionName": "Blockchain (traceability)",
+    "customerType": "Grower",
+    "capability": "No",
+    "summary": "Silo does not use blockchain or distributed ledger technology for traceability. The platform implements comprehensive traditional database-driven traceability through lot genealogy (parent-child relationships), delta traces, and audit logging. The FSMA 204 compliance epic (food safety traceability) is deprioritized. While the system has robust chain-of-custody tracking, it uses conventional database records rather than cryptographic immutability.",
+    "notionFindings": "Traceability + Food Safety + FMSA 204 epic is Deprioritized (deadline Jan 2026). No blockchain, distributed ledger, or immutable references found. Audit Log v1 is Released. Admin > Audit Log feature exists. All 'ledger' references are traditional accounting ledgers (General Ledger, journal entries).",
+    "notionLinks": [
+      {"title": "Traceability + Food Safety + FMSA 204", "url": "https://www.notion.so/Traceability-Food-Safety-FMSA-204-9abb0594f2104933b3e35f0010252fc1"}
+    ],
+    "codeFindings": "LotDelta schema records inventory changes with parent-child relationships (parentLotID, destinationLotID). Trace types: Purchase, Sale, Transfer, Repack, Waste, Loss. UserAction and OrderActionLogEntry for audit trails. JournalEntry and LedgerTransaction for accounting (not blockchain). HMAC-SHA256 signatures for URL validation only. No Hyperledger, Ethereum, or any blockchain SDK integration. Modern Treasury integration is for banking ledgers, not blockchain.",
+    "codeLocations": [
+      "silo-go/ent/schema/lot_delta.go",
+      "silo-go/protocol/trace.go",
+      "silo-go/ent/schema/journalentry.go",
+      "silo-go/ent/schema/ledgertransaction.go",
+      "silo-go/lib/signature/signature.go"
+    ],
+    "analyzedAt": "2024-12-21T00:00:00Z"
+  },
+  "grower:canadian-confirmation-of-sale": {
+    "functionName": "Canadian Confirmation of Sale",
+    "customerType": "Grower",
+    "capability": "Partial",
+    "summary": "Silo has sales confirmation document and email capabilities, plus full Canadian address/province support, but lacks specific Canadian DRC (Dispute Resolution Corporation) compliance features. The system has PACA disclaimer functionality for US produce regulations and PO disclaimers, which could be adapted for Canadian requirements. However, there is no DRC-specific confirmation of sale document or Canadian regulatory compliance features implemented.",
+    "notionFindings": "Sales > Printing/Emailing includes Sales Confirmation document type. No Canadian-specific compliance documentation found. PACA disclaimers documented but DRC not mentioned. FSMA compliance referenced for US regulations only.",
+    "notionLinks": [
+      {"title": "Sales > Printing/Emailing", "url": "https://www.notion.so/Sales-Printing-Emailing-e4a225f2b7ab4a02bb87-108a4fd00e42"}
+    ],
+    "codeFindings": "Canadian province constants (13 provinces/territories) in const.ts. Canadian postal code validation regex. StateSelect component with includeCanadianProvinces prop. Address model handles CA country normalization. PACA disclaimer system with per-account customization (could be adapted for DRC). PO disclaimer field added May 2024. sendConfirmationEmail() for sales order confirmations. Key gaps: No DRC-specific document template, no Canadian regulatory compliance flags, PACA focus is US-only.",
+    "codeLocations": [
+      "silo-web/src/utils/const.ts",
+      "silo-web/src/utils/validate.ts",
+      "silo-web/src/components/StateSelect/StateSelect.tsx",
+      "silo-go/lib/document/seller_customizations.go",
+      "silo-go/db/migrations/20240520130332_AddPoDisclaimerToAccount.go",
+      "silo-web/src/fetch/Orders/SalesOrders/index.ts"
+    ],
+    "analyzedAt": "2024-12-21T00:00:00Z"
+  },
+  "grower:report-administration": {
+    "functionName": "Report Administration",
+    "customerType": "Grower",
+    "capability": "Partial",
+    "summary": "Silo has basic reporting infrastructure with Sales, Inventory, and Financial reports accessible through the UI, but lacks advanced scheduling, distribution (email/fax/printer), and automated report delivery capabilities. Export functionality exists for CSV, but no scheduled report generation or multi-channel distribution.",
+    "notionFindings": "Multiple Report entries including Accounting > Reports, Reports > Financial, Reports > Inventory, Reports > Sales, and Reports > Exception Management. Report Enhancements epic is Under Dev.",
+    "notionLinks": [
+      {"title": "Accounting > Reports", "url": "https://www.notion.so/Accounting-Reports-f9fc8617f4df42b590a11398d531f127"},
+      {"title": "Reports > Financial", "url": "https://www.notion.so/Reports-Financial-d0cedd9b9d9e4a79a6bdf7fee378f31c"},
+      {"title": "Reports > Inventory", "url": "https://www.notion.so/Reports-Inventory-1ae0e6e2325c45deb8434cdb1d3763d0"},
+      {"title": "Reports > Sales", "url": "https://www.notion.so/Reports-Sales-879c91adab9042ac9837d73f6dfad728"}
+    ],
+    "codeFindings": "Reports container with SalesReports, InventoryReports, FinancialReports subcomponents. Email infrastructure via SendGrid for invoices/statements. CSV export in billing service. No scheduled report generation, distribution scheduling, or multi-destination delivery (fax, print).",
+    "codeLocations": [
+      "silo-web/src/containers/Reports/",
+      "silo-go/lib/emails/send.go",
+      "silo-go/services/billing/controller_accounting.go"
+    ],
+    "analyzedAt": "2024-12-21T00:00:00Z"
+  },
+  "grower:cold-storage-billing": {
+    "functionName": "Cold Storage Billing",
+    "customerType": "Grower",
+    "capability": "Partial",
+    "summary": "Silo has foundational billing and pricing infrastructure through PriceSheet and PaymentFee schemas, supporting rate management and flexible multipliers. However, there is no cold storage-specific billing, time-period-based rate adjustments, or automatic billing tied to shipment events.",
+    "notionFindings": "References to Bill Pay, Billing Operations (In Progress), and Using Silo to bill for Silo (Not Started). No specific cold storage billing, rate card management, or time-period-based charging documented.",
+    "notionLinks": [
+      {"title": "Bill Pay", "url": "https://www.notion.so/Bill-Pay-29fe0d902a6d4b2cb7e55292c440ebc3"},
+      {"title": "Billing Operations", "url": "https://www.notion.so/Billing-Operations-693dcd2ee6984ccb9b80442f14504309"}
+    ],
+    "codeFindings": "PriceSheet schema with multiplier, name, and availability date ranges. PaymentFee schema manages fee percentages. No ColdStorageRate, StorageCharge, or time-period-based billing entities. No automatic billing upon shipment or warehouse storage charge management.",
+    "codeLocations": [
+      "silo-go/ent/schema/pricesheet.go",
+      "silo-go/ent/schema/paymentfee.go",
+      "silo-go/services/billing/"
+    ],
+    "analyzedAt": "2024-12-21T00:00:00Z"
+  },
+  "grower:chep-reporting": {
+    "functionName": "CHEP Reporting",
+    "customerType": "Grower",
+    "capability": "No",
+    "summary": "Silo does not have CHEP pallet tracking or compliance reporting capabilities. While the system tracks general pallet counts in freight loads and inventory, there is no specialized CHEP container/pallet pool tracking, movement history, or compliance file generation for reusable pallet pool management.",
+    "notionFindings": "Searches for CHEP returned nothing specific. Inventory Pallets feature exists but is generic pallet tracking, not CHEP-specific. Compliance pages reference FSMA only.",
+    "notionLinks": [
+      {"title": "Inventory > Pallets", "url": "https://www.notion.so/Inventory-Pallets-873c4bd0415549098fbd8900bd9eaf2e"}
+    ],
+    "codeFindings": "FreightLoad schema has pallet_count for general freight tracking. No CHEP-specific entities, pallet pool tracking, container ownership management, or compliance file generation. No pallet pool or container reuse tracking.",
+    "codeLocations": [
+      "silo-go/ent/schema/freightload.go",
+      "silo-go/ent/schema/inventory.go"
+    ],
+    "analyzedAt": "2024-12-21T00:00:00Z"
+  }
+}
