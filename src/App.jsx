@@ -703,6 +703,19 @@ function App() {
                   </span>
                 </div>
 
+                {/* Famous Pricing Details */}
+                {selectedItem.famousStatus && selectedItem.famousModule && (
+                  <div className="famous-pricing">
+                    <h4>📊 Famous Software Equivalent</h4>
+                    <div className="pricing-details">
+                      <span className="module-name">{selectedItem.famousModule}</span>
+                      {selectedItem.famousPrice && (
+                        <span className="module-price">${selectedItem.famousPrice.toLocaleString()}</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* Analysis Section */}
                 {(() => {
                   // Find analysis using helper that tries multiple matching strategies
