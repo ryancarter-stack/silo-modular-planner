@@ -1,0 +1,539 @@
+/* Roadmap Page Styles */
+
+.roadmap-page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+  padding: 2rem;
+}
+
+.roadmap-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.roadmap-header h1 {
+  margin: 0 0 0.25rem 0;
+  color: #fff;
+  font-size: 1.75rem;
+}
+
+.roadmap-header .subtitle {
+  margin: 0;
+  color: rgba(255,255,255,0.6);
+  font-size: 0.9rem;
+}
+
+.roadmap-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.save-status {
+  font-size: 0.8rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+}
+
+.save-status.saving {
+  color: rgba(255,255,255,0.6);
+}
+
+.save-status.saved {
+  color: #7CB342;
+}
+
+.save-status.error {
+  color: #ff6b6b;
+}
+
+.loading-state {
+  text-align: center;
+  color: rgba(255,255,255,0.6);
+  padding: 4rem;
+  font-size: 1.1rem;
+}
+
+.btn-primary {
+  background: #4A90A4;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.btn-primary:hover {
+  background: #3d7a8c;
+}
+
+.btn-secondary {
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.8);
+  border: 1px solid rgba(255,255,255,0.2);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  background: rgba(255,255,255,0.15);
+  border-color: rgba(255,255,255,0.3);
+}
+
+/* Start/End State Boxes */
+.roadmap-start,
+.roadmap-end {
+  display: flex;
+  justify-content: center;
+  padding: 1.5rem 0;
+}
+
+.state-box {
+  background: rgba(255,255,255,0.05);
+  border: 2px solid rgba(255,255,255,0.2);
+  border-radius: 12px;
+  padding: 1rem 2rem;
+  text-align: center;
+  min-width: 200px;
+}
+
+.state-box span {
+  display: block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 0.25rem;
+}
+
+.state-box strong {
+  font-size: 1.25rem;
+  color: #fff;
+}
+
+.current-state {
+  border-color: #4A90A4;
+}
+
+.future-state {
+  border-color: #7CB342;
+  background: rgba(124, 179, 66, 0.1);
+}
+
+/* Lanes Container */
+.roadmap-lanes {
+  display: flex;
+  gap: 1.5rem;
+  overflow-x: auto;
+  padding: 1rem 0 2rem;
+  min-height: 400px;
+}
+
+/* Path Lane */
+.path-lane {
+  flex: 0 0 320px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 12px;
+  padding: 1rem;
+  position: relative;
+  border-top: 4px solid var(--lane-color, #4A90A4);
+}
+
+.lane-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.lane-header h3 {
+  margin: 0;
+  color: #fff;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  transition: background 0.2s;
+  flex: 1;
+  min-width: 150px;
+}
+
+.lane-header h3:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+.lane-name-edit {
+  display: flex;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.lane-name-edit input {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: #fff;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 1rem;
+  flex: 1;
+  min-width: 120px;
+}
+
+.lane-name-edit button {
+  background: rgba(255,255,255,0.1);
+  border: none;
+  color: #fff;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.lane-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.lane-stats {
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.5);
+  white-space: nowrap;
+}
+
+.lane-actions input[type="color"] {
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.lane-actions button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.lane-actions button:hover {
+  opacity: 1;
+}
+
+/* Lane Content */
+.lane-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Initiative Block */
+.initiative-block {
+  background: rgba(255,255,255,0.05);
+  border-radius: 8px;
+  border-left: 3px solid var(--lane-color, #4A90A4);
+  overflow: hidden;
+  transition: box-shadow 0.2s, opacity 0.2s;
+}
+
+.initiative-block.dragging {
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  z-index: 10;
+}
+
+.initiative-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(255,255,255,0.03);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.initiative-drag-handle {
+  color: rgba(255,255,255,0.4);
+  cursor: grab;
+  padding: 0.25rem;
+  font-size: 0.8rem;
+  user-select: none;
+  transition: color 0.2s;
+}
+
+.initiative-drag-handle:hover {
+  color: rgba(255,255,255,0.7);
+}
+
+.initiative-drag-handle:active {
+  cursor: grabbing;
+}
+
+.collapse-btn {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.5);
+  cursor: pointer;
+  font-size: 0.7rem;
+  padding: 0.25rem;
+  transition: color 0.2s;
+}
+
+.collapse-btn:hover {
+  color: rgba(255,255,255,0.8);
+}
+
+.initiative-header h4 {
+  margin: 0;
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  flex: 1;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.initiative-header h4:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+.initiative-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.module-count {
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.4);
+  background: rgba(255,255,255,0.1);
+  padding: 0.15rem 0.5rem;
+  border-radius: 10px;
+}
+
+.delete-initiative-btn {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.3);
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.delete-initiative-btn:hover {
+  color: #ff6b6b;
+}
+
+/* Initiative Modules */
+.initiative-modules {
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Modules */
+.roadmap-module {
+  background: rgba(255,255,255,0.08);
+  border-radius: 6px;
+  padding: 0.6rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  transition: all 0.2s;
+}
+
+.roadmap-module:hover {
+  background: rgba(255,255,255,0.12);
+}
+
+.roadmap-module.dragging {
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+
+.module-drag-handle {
+  color: rgba(255,255,255,0.4);
+  cursor: grab;
+  padding: 0.15rem;
+  font-size: 0.75rem;
+  user-select: none;
+}
+
+.module-drag-handle:active {
+  cursor: grabbing;
+}
+
+.module-content {
+  flex: 1;
+  cursor: pointer;
+}
+
+.module-name {
+  color: #fff;
+  font-weight: 500;
+  font-size: 0.85rem;
+  margin-bottom: 0.2rem;
+}
+
+.module-target {
+  display: inline-block;
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.8);
+  font-size: 0.65rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  margin-bottom: 0.2rem;
+}
+
+.module-notes {
+  color: rgba(255,255,255,0.5);
+  font-size: 0.75rem;
+  margin-top: 0.2rem;
+}
+
+.module-delete {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.3);
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.module-delete:hover {
+  color: #ff6b6b;
+}
+
+/* Add Module Button */
+.add-module-btn {
+  background: rgba(255,255,255,0.03);
+  border: 1px dashed rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.4);
+  padding: 0.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.8rem;
+}
+
+.add-module-btn:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.3);
+  color: rgba(255,255,255,0.7);
+}
+
+/* Add Initiative Button */
+.add-initiative-btn {
+  background: rgba(255,255,255,0.05);
+  border: 2px dashed rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.5);
+  padding: 0.75rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.add-initiative-btn:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.4);
+  color: rgba(255,255,255,0.8);
+}
+
+/* Lane connecting line (visual flair) */
+.lane-line {
+  position: absolute;
+  bottom: -2rem;
+  left: 50%;
+  width: 2px;
+  height: 2rem;
+  background: linear-gradient(to bottom, var(--lane-color, #4A90A4), transparent);
+}
+
+/* Modal Styles */
+.roadmap-modal {
+  max-width: 400px;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  color: rgba(255,255,255,0.7);
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #fff;
+  padding: 0.75rem;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-family: inherit;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #4A90A4;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.modal-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .roadmap-header {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .roadmap-lanes {
+    gap: 1rem;
+  }
+
+  .path-lane {
+    flex: 0 0 280px;
+  }
+}

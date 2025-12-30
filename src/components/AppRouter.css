@@ -1,0 +1,102 @@
+/* Global Navigation Styles */
+
+.app-router {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.global-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #0f0f1a;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  padding: 0 1.5rem;
+  height: 56px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.brand-icon {
+  font-size: 1.5rem;
+}
+
+.brand-text {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.nav-tabs {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.nav-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.6);
+  padding: 0.75rem 1.25rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.nav-tab:hover {
+  background: rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.9);
+}
+
+.nav-tab.active {
+  background: rgba(74, 144, 164, 0.2);
+  color: #4A90A4;
+}
+
+.tab-icon {
+  font-size: 1rem;
+}
+
+.view-container {
+  flex: 1;
+}
+
+/* Override existing app header when inside router */
+.app-router .app > .header {
+  display: none;
+}
+
+.app-router .roadmap-page {
+  padding-top: 1rem;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .global-nav {
+    padding: 0 1rem;
+  }
+
+  .brand-text {
+    display: none;
+  }
+
+  .tab-text {
+    display: none;
+  }
+
+  .nav-tab {
+    padding: 0.75rem;
+  }
+}
